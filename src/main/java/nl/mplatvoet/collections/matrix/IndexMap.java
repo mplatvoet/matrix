@@ -16,11 +16,13 @@ public class IndexMap<V> implements Map<Integer, V> {
 
     private int size = 0;
 
-    private transient EntrySet entrySet = null;
+    private EntrySet entrySet = null;
+    private KeySet keySet = null;
+    private ValuesCollection valuesCollection = null;
 
     @Override
     public int size() {
-        return 0;
+        return size;
     }
 
     @Override
@@ -131,12 +133,18 @@ public class IndexMap<V> implements Map<Integer, V> {
 
     @Override
     public Set<Integer> keySet() {
-        return null;
+        if (keySet == null) {
+            keySet = new KeySet();
+        }
+        return keySet;
     }
 
     @Override
     public Collection<V> values() {
-        return null;
+        if (valuesCollection == null) {
+            valuesCollection = new ValuesCollection();
+        }
+        return valuesCollection;
     }
 
     @Override
@@ -146,6 +154,7 @@ public class IndexMap<V> implements Map<Integer, V> {
         }
         return entrySet;
     }
+
 
     private static class ValueEntry<V> implements Map.Entry<Integer, V> {
         private final int key;
@@ -200,7 +209,155 @@ public class IndexMap<V> implements Map<Integer, V> {
         }
     }
 
-    class EntrySet implements Set<Entry<Integer, V>> {
+    private class ValuesCollection extends AbstractCollection<V> {
+        @Override
+        public boolean contains(Object o) {
+
+            for (int i = 0; i < IndexMap.this.entries.length; ++i) {
+                ValueEntry<V> entry = IndexMap.this.entries[i];
+                if (entry != null) {
+                    V value = entry.getValue();
+                    if (value == null && o == null) {
+                        return true;
+                    }
+                    if (value != null && value.equals(o)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public Iterator<V> iterator() {
+            return new ValuesIterator();
+        }
+
+        @Override
+        public Object[] toArray() {
+            return toArray(new Object[IndexMap.this.size]);
+        }
+
+        @Override
+        V valueOf(ValueEntry<V> entry) {
+            return entry.getValue();
+        }
+    }
+
+    private abstract class AbstractCollection<T> implements Collection<T> {
+
+        @Override
+        public int size() {
+            return IndexMap.this.size;
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return IndexMap.this.isEmpty();
+        }
+
+        @Override
+        public Object[] toArray() {
+            return toArray(new Object[IndexMap.this.size]);
+        }
+
+        abstract T valueOf(ValueEntry<V> entry);
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public <T> T[] toArray(T[] a) {
+            final int size = IndexMap.this.size;
+
+
+            T[] result = a.length >= size ? a :
+                    (T[]) java.lang.reflect.Array
+                            .newInstance(a.getClass().getComponentType(), size);
+
+            int idx = 0;
+            for (int i = 0; i < IndexMap.this.entries.length && idx < size; ++i) {
+                ValueEntry<V> entry = IndexMap.this.entries[i];
+                if (entry != null) {
+                    result[idx] = (T) valueOf(entry);
+                    ++idx;
+                }
+            }
+
+            for (; idx < size; ++idx) {
+                result[idx] = null;
+            }
+
+            return result;
+
+        }
+
+        @Override
+        public boolean add(T integer) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean remove(Object o) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean containsAll(Collection<?> c) {
+            if (c == null) {
+                throw new NullPointerException(); //according to spec
+            }
+            for (Object o : c) {
+                if (!contains(o)) {
+                    return false;
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public boolean addAll(Collection<? extends T> c) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean retainAll(Collection<?> c) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean removeAll(Collection<?> c) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void clear() {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    private class KeySet extends AbstractCollection<Integer> implements Set<Integer> {
+        @Override
+        public boolean contains(Object o) {
+            if (o == null) {
+                throw new NullPointerException(); //according to spec
+            }
+
+            Integer idx = (Integer) o; // potential CCE is according to spec
+            return idx >= 0 && idx < IndexMap.this.entries.length && IndexMap.this.entries[idx] != null;
+        }
+
+        @Override
+        public Iterator<Integer> iterator() {
+            return new KeyIterator();
+        }
+
+
+        @Override
+        Integer valueOf(ValueEntry<V> entry) {
+            return entry.getKey();
+        }
+    }
+
+    private class EntrySet extends AbstractCollection<Entry<Integer, V>> implements Set<Entry<Integer, V>> {
 
         @Override
         public Iterator<Entry<Integer, V>> iterator() {
@@ -213,17 +370,22 @@ public class IndexMap<V> implements Map<Integer, V> {
         }
 
         @Override
+        Entry<Integer, V> valueOf(ValueEntry<V> entry) {
+            return entry;
+        }
+
+        @Override
         @SuppressWarnings("unchecked")
         public <T> T[] toArray(T[] a) {
             final int size = IndexMap.this.size;
 
 
             T[] result = a.length >= size ? a :
-                    (T[])java.lang.reflect.Array
+                    (T[]) java.lang.reflect.Array
                             .newInstance(a.getClass().getComponentType(), size);
 
             int idx = 0;
-            for(int i = 0; i < IndexMap.this.entries.length && idx < size; ++i) {
+            for (int i = 0; i < IndexMap.this.entries.length && idx < size; ++i) {
                 ValueEntry<V> entry = IndexMap.this.entries[i];
                 if (entry != null) {
                     result[idx] = (T) entry;
@@ -300,7 +462,7 @@ public class IndexMap<V> implements Map<Integer, V> {
             }
 
             boolean modified = false;
-            for(int i = 0; i < IndexMap.this.entries.length; ++i) {
+            for (int i = 0; i < IndexMap.this.entries.length; ++i) {
                 ValueEntry<V> entry = IndexMap.this.entries[i];
                 if (entry != null && !c.contains(entry)) {
                     IndexMap.this.remove(entry.getKey());
@@ -325,16 +487,6 @@ public class IndexMap<V> implements Map<Integer, V> {
         }
 
         @Override
-        public int size() {
-            return IndexMap.this.size;
-        }
-
-        @Override
-        public boolean isEmpty() {
-            return IndexMap.this.isEmpty();
-        }
-
-        @Override
         public boolean contains(Object o) {
             if (o == null) {
                 throw new NullPointerException(); //according to spec
@@ -355,7 +507,7 @@ public class IndexMap<V> implements Map<Integer, V> {
             if (o == this)
                 return true;
 
-            if (!(o instanceof Set))
+            if (!(o instanceof Collection))
                 return false;
 
             Collection c = (Collection) o;
@@ -386,7 +538,38 @@ public class IndexMap<V> implements Map<Integer, V> {
         }
     }
 
-    private class EntryIterator implements Iterator<Map.Entry<Integer, V>> {
+    private class EntryIterator extends AbstractEntryIterator<Map.Entry<Integer, V>> {
+        @Override
+        Entry<Integer, V> valueOf(Entry<Integer, V> entry) {
+            return entry;
+        }
+    }
+
+    private class KeyIterator extends AbstractEntryIterator<Integer> {
+        @Override
+        Integer valueOf(Entry<Integer, V> entry) {
+            return entry.getKey();
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    private class ValuesIterator extends AbstractEntryIterator<V> {
+        @Override
+        V valueOf(Entry<Integer, V> entry) {
+            return entry.getValue();
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    private abstract class AbstractEntryIterator<T> implements Iterator<T> {
         private int index = -1;
         private boolean removed = false;
 
@@ -398,14 +581,16 @@ public class IndexMap<V> implements Map<Integer, V> {
             return false;
         }
 
+        abstract T valueOf(Entry<Integer, V> entry);
+
         @Override
-        public Entry<Integer, V> next() {
+        public T next() {
             for (int i = index + 1; i < IndexMap.this.entries.length; ++i) {
                 ValueEntry<V> entry = IndexMap.this.entries[i];
                 if (entry != null) {
                     removed = false;
                     index = i;
-                    return entry;
+                    return valueOf(entry);
                 }
             }
             throw new NoSuchElementException();
@@ -423,4 +608,6 @@ public class IndexMap<V> implements Map<Integer, V> {
             removed = true;
         }
     }
+
+
 }
