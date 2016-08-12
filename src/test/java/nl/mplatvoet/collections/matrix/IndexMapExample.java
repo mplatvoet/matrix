@@ -11,7 +11,10 @@ public class IndexMapExample {
         map.put(3, "Hello");
         printValues(values);
 
-        map.put(4, "crewl");
+        map.put(4, "Crewl");
+        printValues(values);
+
+        map.put(4, "Jolly");
         printValues(values);
 
         map.remove(4);
