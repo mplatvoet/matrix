@@ -15,7 +15,7 @@ public class MatrixExample {
         m.put(8, 17, 1);
         printMatrix(m);
 
-        m.fillEmptyCells(new CellValueFactory<Integer>() {
+        m.fillBlanks(new CellValueFactory<Integer>() {
             @Override
             public Integer create(int row, int column) {
                 return 0;
