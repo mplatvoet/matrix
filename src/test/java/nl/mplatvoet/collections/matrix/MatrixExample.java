@@ -23,7 +23,7 @@ public class MatrixExample {
     }
 
     private static Matrix<String> generateMatrix(int rows, int columns) {
-        Matrix<String> m = new Matrix<>();
+        IndexMatrix<String> m = new IndexMatrix<>();
         Random random = new Random();
         for (int row = 0; row < rows; ++row) {
             for (int column = 0; column < columns; ++column) {
@@ -37,8 +37,8 @@ public class MatrixExample {
 
     private static void printMatrix(Matrix<?> matrix) {
         for (Matrix.Row<?> row : matrix) {
-            for (Matrix.Cell<?> cell : row) {
-                System.out.print(cell.isBlank() ? " " : cell.getValue());
+            for (Object value : row) {
+                System.out.print(value == null ? " " : value);
                 System.out.print(" ");
             }
             System.out.println();
