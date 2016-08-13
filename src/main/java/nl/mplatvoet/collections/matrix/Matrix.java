@@ -5,12 +5,13 @@ import java.util.NoSuchElementException;
 
 public class Matrix<T> implements Iterable<Matrix.Row<T>> {
     private final IndexMap<Row<T>> rows = new IndexMap<>();
+    private final IndexMap<Column<T>> columns = new IndexMap<>();
 
     private int maxRowIndex = -1;
     private int maxColumnIndex = -1;
 
 
-    public void put(int row, int column, T value) {
+    public T put(int row, int column, T value) {
         if (row < 0) {
             throw new IllegalArgumentException("row must be >= 0");
         }
@@ -26,26 +27,22 @@ public class Matrix<T> implements Iterable<Matrix.Row<T>> {
                 maxRowIndex = row;
             }
         }
-        r.put(column, value);
+        return r.put(column, value);
     }
 
     public void fillBlanks(CellValueFactory<? extends T> factory) {
         for (int rowIndex = 0; rowIndex <= maxRowIndex; ++rowIndex) {
-            Row<T> row = rows.get(rowIndex);
-            if (row == null) {
-                row = new Row<>(this, rowIndex);
-                rows.put(rowIndex, row);
-            }
+            Row<T> row = getRow(rowIndex);
             row.fillBlanks(factory);
         }
     }
 
-    public Cell get(int row, int column) {
-        if (row < 0 || row > maxRowIndex) {
-            throw new IndexOutOfBoundsException("Row must be >= 0 and <= " + maxRowIndex + ", but was: " + row);
-        }
-        Row<T> r = rows.get(row);
-        return r == null ? null : r.get(column);
+    public Cell<T> getCell(int row, int column) {
+        return getRow(row).getCell(column);
+    }
+
+    public T get(int row, int column) {
+        return getCell(row, column).getValue();
     }
 
     public Row<T> getRow(int row) {
@@ -64,7 +61,12 @@ public class Matrix<T> implements Iterable<Matrix.Row<T>> {
         if (column < 0 || column > maxColumnIndex) {
             throw new IndexOutOfBoundsException("Column must be >= 0 and <= " + maxColumnIndex + ", but was: " + column);
         }
-        return new Column<>(this, column);
+        Column<T> c = columns.get(column);
+        if (c == null) {
+            c = new Column<>(this, column);
+            columns.put(column, c);
+        }
+        return c;
     }
 
     @Override
@@ -87,7 +89,11 @@ public class Matrix<T> implements Iterable<Matrix.Row<T>> {
                 throw new IndexOutOfBoundsException("Row must be >= 0 and <= " + matrix.maxRowIndex + ", but was: " + row);
             }
             Row<T> r = matrix.rows.get(row);
-            return r == null ? null : r.get(columnIndex);
+            return r == null ? null : r.getCell(columnIndex);
+        }
+
+        public T put(int row, T value) {
+            return matrix.put(row, columnIndex, value);
         }
 
         public int getColumnIndex() {
@@ -96,24 +102,6 @@ public class Matrix<T> implements Iterable<Matrix.Row<T>> {
 
         public Matrix<T> getMatrix() {
             return matrix;
-        }
-
-        @Override
-        public int hashCode() {
-            return ((Integer) columnIndex).hashCode();
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (!(obj instanceof Column)) {
-                return false;
-            }
-
-            Column other = (Column) obj;
-            return matrix == other.matrix && columnIndex == other.columnIndex;
         }
     }
 
@@ -136,26 +124,41 @@ public class Matrix<T> implements Iterable<Matrix.Row<T>> {
             return rowIndex;
         }
 
-        private void put(int column, T value) {
-            cells.put(column, new Cell<>(this, column, value));
+        private T put(int column, T value) {
+            T previous = null;
+            Cell<T> cell = cells.get(column);
+            if (cell == null) {
+                cell = new Cell<T>(this, column);
+                cells.put(column, cell);
+            } else {
+                previous = cell.getValue();
+            }
+            cell.setValue(value);
+
             if (matrix.maxColumnIndex < column) {
                 matrix.maxColumnIndex = column;
             }
+            return previous;
         }
 
-        public Cell<T> get(int column) {
+        public Cell<T> getCell(int column) {
             if (column < 0 || column > matrix.maxColumnIndex) {
                 throw new IndexOutOfBoundsException("Column must be >= 0 and <= " + matrix.maxColumnIndex + ", but was: " + column);
             }
-            return cells.get(column);
+            Cell<T> cell = cells.get(column);
+            if (cell == null) {
+                cell = new Cell<>(this, column);
+                cells.put(column, cell);
+            }
+            return cell;
         }
 
         public void fillBlanks(CellValueFactory<? extends T> factory) {
             for (int columnIndex = 0; columnIndex <= matrix.maxColumnIndex; ++columnIndex) {
-                Cell<T> cell = cells.get(columnIndex);
-                if (cell == null) {
+                Cell<T> cell = getCell(columnIndex);
+                if (cell.isBlank()) {
                     T value = factory.create(rowIndex, columnIndex);
-                    cells.put(columnIndex, new Cell<>(this, columnIndex, value));
+                    cell.setValue(value);
                 }
             }
         }
@@ -164,37 +167,29 @@ public class Matrix<T> implements Iterable<Matrix.Row<T>> {
         public Iterator<Cell<T>> iterator() {
             return new CellsIterator<>(this);
         }
-
-        @Override
-        public int hashCode() {
-            return ((Integer) rowIndex).hashCode();
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (!(obj instanceof Row)) {
-                return false;
-            }
-
-            Row other = (Row) obj;
-            return matrix == other.matrix && rowIndex == other.rowIndex;
-        }
     }
 
 
     public static final class Cell<T> {
+        private static final Object BLANK = new Object();
 
         private final Row<T> row;
         private final int columnIndex;
-        private final T value;
+        private T value;
 
         private Cell(Row<T> row, int columnIndex, T value) {
             this.row = row;
             this.columnIndex = columnIndex;
             this.value = value;
+        }
+
+        private Cell(Row row, int column) {
+            this(row, column, Cell.<T>blank());
+        }
+
+        @SuppressWarnings("unchecked")
+        private static <T> T blank() {
+            return (T) BLANK;
         }
 
         public Matrix<T> getMatrix() {
@@ -205,8 +200,20 @@ public class Matrix<T> implements Iterable<Matrix.Row<T>> {
             return row;
         }
 
+        public Column<T> getColumn() {
+            return row.matrix.getColumn(columnIndex);
+        }
+
         public T getValue() {
-            return value;
+            return value == BLANK ? null : value;
+        }
+
+        public void setValue(T value) {
+            this.value = value;
+        }
+
+        public void clear() {
+            this.value = blank();
         }
 
         public int getColumnIndex() {
@@ -217,8 +224,27 @@ public class Matrix<T> implements Iterable<Matrix.Row<T>> {
             return row.getRowIndex();
         }
 
-        public boolean isEmpty() {
-            return value == null;
+        public boolean isBlank() {
+            return value == BLANK;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append("[Cell ");
+            sb.append(row.getRowIndex());
+            sb.append(":");
+            sb.append(columnIndex);
+            sb.append(" ");
+            if (isBlank()) {
+                sb.append("<empty>");
+            } else {
+                sb.append("[");
+                sb.append(getValue());
+                sb.append("]");
+            }
+            sb.append("]");
+            return sb.toString();
         }
     }
 
@@ -268,8 +294,7 @@ public class Matrix<T> implements Iterable<Matrix.Row<T>> {
             if (++index > row.matrix.maxColumnIndex) {
                 throw new NoSuchElementException();
             }
-            Cell<T> cell = row.get(index);
-            return cell == null ? new Cell<>(row, index, null) : cell;
+            return row.getCell(index);
         }
 
         @Override

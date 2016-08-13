@@ -14,6 +14,7 @@ public class MatrixExample {
         m.put(7, 13, 1);
         m.put(8, 17, 1);
         printMatrix(m);
+        printMatrixCells(m);
 
         m.fillBlanks(new CellValueFactory<Integer>() {
             @Override
@@ -24,10 +25,20 @@ public class MatrixExample {
         printMatrix(m);
     }
 
-    private static void printMatrix(Matrix<? extends Object> matrix) {
-        for (Matrix.Row<? extends Object> row : matrix) {
-            for (Matrix.Cell<? extends Object> cell : row) {
-                System.out.print(cell.isEmpty() ? " " : cell.getValue().toString());
+    private static void printMatrix(Matrix<?> matrix) {
+        for (Matrix.Row<?> row : matrix) {
+            for (Matrix.Cell<?> cell : row) {
+                System.out.print(cell.isBlank() ? " " : cell.getValue().toString());
+                System.out.print(" ");
+            }
+            System.out.println();
+        }
+    }
+
+    private static void printMatrixCells(Matrix<?> matrix) {
+        for (Matrix.Row<?> row : matrix) {
+            for (Matrix.Cell<?> cell : row) {
+                System.out.print(cell);
                 System.out.print(" ");
             }
             System.out.println();
