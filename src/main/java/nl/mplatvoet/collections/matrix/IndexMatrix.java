@@ -7,6 +7,9 @@ public class IndexMatrix<T> implements Matrix<T> {
     private final IndexMap<IndexRow<T>> rows = new IndexMap<>();
     private final IndexMap<Column<T>> columns = new IndexMap<>();
 
+    private RowsIterable<T> rowsIterable = null;
+    private ColumnsIterable<T> columnsIterable = null;
+
     private int maxRowIndex = -1;
     private int maxColumnIndex = -1;
 
@@ -17,7 +20,7 @@ public class IndexMatrix<T> implements Matrix<T> {
             throw new IllegalArgumentException("row must be >= 0");
         }
         if (column < 0) {
-            throw new IllegalArgumentException("column must be >= 0");
+            throw new IllegalArgumentException("row must be >= 0");
         }
 
         IndexRow<T> r = rows.get(row);
@@ -59,15 +62,24 @@ public class IndexMatrix<T> implements Matrix<T> {
         if (matrix instanceof IndexMatrix) {
             putAllIndexMatrix((IndexMatrix<T>) matrix, rowOffset, columnOffset);
         } else {
-            //TODO
-            throw new UnsupportedOperationException("Not implemented");
+            putAllGenericMatrix(matrix, rowOffset, columnOffset);
         }
 
     }
 
+    private void putAllGenericMatrix(Matrix<? extends T> matrix, int rowOffset, int columnOffset) {
+        for (Row<? extends T> row : matrix.rows()) {
+            for (Cell<? extends T> cell : row.cells()) {
+                if (!cell.isBlank()) {
+                    int rowIdx = cell.getRowIndex() + rowOffset;
+                    int columnIdx = cell.getColumnIndex() + columnOffset;
+                    put(rowIdx, columnIdx, cell.getValue());
+                }
+            }
+        }
+    }
 
-
-    private void putAllIndexMatrix(IndexMatrix<T> matrix, int rowOffset, int columnOffset) {
+    private void putAllIndexMatrix(IndexMatrix<? extends T> matrix, int rowOffset, int columnOffset) {
         for (IndexRow<? extends T> row : matrix.rows.values()) {
             for (IndexCell<? extends T> cell : row.cells.values()) {
                 if (!cell.isBlank()) {
@@ -164,8 +176,19 @@ public class IndexMatrix<T> implements Matrix<T> {
     }
 
     @Override
-    public Iterator<Row<T>> iterator() {
-        return new RowsIterator<>(this);
+    public Iterable<Row<T>> rows() {
+        if (rowsIterable == null) {
+            rowsIterable = new RowsIterable<>(this);
+        }
+        return rowsIterable;
+    }
+
+    @Override
+    public Iterable<Column<T>> columns() {
+        if (columnsIterable == null) {
+            columnsIterable = new ColumnsIterable<>(this);
+        }
+        return columnsIterable;
     }
 
     @Override
@@ -260,6 +283,7 @@ public class IndexMatrix<T> implements Matrix<T> {
     private static final class IndexColumn<T> implements Column<T> {
         private final int columnIndex;
         private final IndexMatrix<T> matrix;
+        private ColumnCellsIterable<T> cellsIterable = null;
 
 
         private IndexColumn(IndexMatrix<T> matrix, int columnIndex) {
@@ -309,6 +333,14 @@ public class IndexMatrix<T> implements Matrix<T> {
         }
 
         @Override
+        public Iterable<Cell<T>> cells() {
+            if (cellsIterable == null) {
+                cellsIterable = new ColumnCellsIterable<>(this);
+            }
+            return null;
+        }
+
+        @Override
         public void fillBlanks(CellValueFactory<? extends T> factory) {
             for (int rowIndex = 0; rowIndex <= matrix.maxRowIndex; ++rowIndex) {
                 Cell<T> cell = matrix.getRow(rowIndex).getCell(columnIndex);
@@ -335,6 +367,8 @@ public class IndexMatrix<T> implements Matrix<T> {
         private final IndexMap<IndexCell<T>> cells = new IndexMap<>();
         private final IndexMatrix<T> matrix;
         private final int rowIndex;
+
+        private RowCellsIterable<T> cellsIterable = null;
 
         private IndexRow(IndexMatrix<T> matrix, int rowIndex) {
             this.matrix = matrix;
@@ -411,6 +445,14 @@ public class IndexMatrix<T> implements Matrix<T> {
         @Override
         public Iterator<T> iterator() {
             return new RowIterator<>(this);
+        }
+
+        @Override
+        public Iterable<Cell<T>> cells() {
+            if (cellsIterable == null) {
+                cellsIterable = new RowCellsIterable<>(this);
+            }
+            return cellsIterable;
         }
     }
 
@@ -517,8 +559,7 @@ public class IndexMatrix<T> implements Matrix<T> {
             if (++index > matrix.maxRowIndex) {
                 throw new NoSuchElementException();
             }
-            IndexRow<T> row = matrix.rows.get(index);
-            return row == null ? new IndexRow<>(matrix, index) : row;
+            return matrix.getRow(index);
         }
 
         @Override
@@ -555,6 +596,35 @@ public class IndexMatrix<T> implements Matrix<T> {
         }
     }
 
+
+    private static class ColumnsIterator<T> implements Iterator<Column<T>> {
+        private final IndexMatrix<T> matrix;
+        private int index = -1;
+
+
+        private ColumnsIterator(IndexMatrix<T> matrix) {
+            this.matrix = matrix;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return index < matrix.maxColumnIndex;
+        }
+
+        @Override
+        public Column<T> next() {
+            if (++index > matrix.maxColumnIndex) {
+                throw new NoSuchElementException();
+            }
+            return matrix.getColumn(index);
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+    }
+
     private static class ColumnIterator<T> implements Iterator<T> {
         private final IndexColumn<T> column;
         private int index = -1;
@@ -580,6 +650,114 @@ public class IndexMatrix<T> implements Matrix<T> {
         @Override
         public void remove() {
             throw new UnsupportedOperationException();
+        }
+    }
+
+    private static class RowCellIterator<T> implements Iterator<Cell<T>> {
+        private final IndexRow<T> row;
+        private int index = -1;
+
+
+        private RowCellIterator(IndexRow<T> row) {
+            this.row = row;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return index < row.matrix.maxRowIndex;
+        }
+
+        @Override
+        public Cell<T> next() {
+            if (++index > row.matrix.maxRowIndex) {
+                throw new NoSuchElementException();
+            }
+            return row.getCell(index);
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    private static class ColumnCellIterator<T> implements Iterator<Cell<T>> {
+        private final IndexColumn<T> column;
+        private int index = -1;
+
+
+        private ColumnCellIterator(IndexColumn<T> column) {
+            this.column = column;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return index < column.matrix.maxColumnIndex;
+        }
+
+        @Override
+        public Cell<T> next() {
+            if (++index > column.matrix.maxColumnIndex) {
+                throw new NoSuchElementException();
+            }
+            return column.getCell(index);
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    private static class ColumnCellsIterable<T> implements Iterable<Cell<T>> {
+        private final IndexColumn<T> column;
+
+        private ColumnCellsIterable(IndexColumn<T> column) {
+            this.column = column;
+        }
+
+        @Override
+        public Iterator<Cell<T>> iterator() {
+            return new ColumnCellIterator<>(column);
+        }
+    }
+
+    private static class RowCellsIterable<T> implements Iterable<Cell<T>> {
+        private final IndexRow<T> row;
+
+        private RowCellsIterable(IndexRow<T> row) {
+            this.row = row;
+        }
+
+        @Override
+        public Iterator<Cell<T>> iterator() {
+            return new RowCellIterator<>(row);
+        }
+    }
+
+    private static class ColumnsIterable<T> implements Iterable<Column<T>> {
+        private final IndexMatrix<T> matrix;
+
+        private ColumnsIterable(IndexMatrix<T> matrix) {
+            this.matrix = matrix;
+        }
+
+        @Override
+        public Iterator<Column<T>> iterator() {
+            return new ColumnsIterator<>(matrix);
+        }
+    }
+
+    private static class RowsIterable<T> implements Iterable<Row<T>> {
+        private final IndexMatrix<T> matrix;
+
+        private RowsIterable(IndexMatrix<T> matrix) {
+            this.matrix = matrix;
+        }
+
+        @Override
+        public Iterator<Row<T>> iterator() {
+            return new RowsIterator<>(matrix);
         }
     }
 }

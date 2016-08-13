@@ -1,7 +1,7 @@
 package nl.mplatvoet.collections.matrix;
 
 
-public interface Matrix<T> extends Iterable<Matrix.Row<T>> {
+public interface Matrix<T>  {
     T put(int row, int column, T value);
 
     void fillBlanks(CellValueFactory<? extends T> factory);
@@ -17,6 +17,10 @@ public interface Matrix<T> extends Iterable<Matrix.Row<T>> {
     T get(int row, int column);
 
     Matrix.Row<T> getRow(int row);
+
+    Iterable<Row<T>> rows();
+
+    Iterable<Column<T>> columns();
 
     Column<T> getColumn(int column);
 
@@ -59,6 +63,7 @@ public interface Matrix<T> extends Iterable<Matrix.Row<T>> {
 
         void fillBlanks(CellValueFactory<? extends T> factory);
 
+        Iterable<Cell<T>> cells();
     }
 
     interface Row<T> extends Iterable<T> {
@@ -76,5 +81,6 @@ public interface Matrix<T> extends Iterable<Matrix.Row<T>> {
 
         void fillBlanks(CellValueFactory<? extends T> factory);
 
+        Iterable<Cell<T>> cells();
     }
 }
