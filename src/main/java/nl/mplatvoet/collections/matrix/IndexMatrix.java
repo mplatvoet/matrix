@@ -145,9 +145,10 @@ public class IndexMatrix<T> implements Matrix<T> {
             throw new IndexOutOfBoundsException("row must be >= 0 and <= " + maxRowIndex + ", but was: " + row);
         }
         evictRow(row);
-        for (int idx = row +1; idx <= maxRowIndex; ++idx) {
-            moveRow(idx, idx -1);
+        for (int idx = row + 1; idx <= maxRowIndex; ++idx) {
+            moveRow(idx, idx - 1);
         }
+        --maxRowIndex;
     }
 
     @Override
@@ -710,6 +711,7 @@ public class IndexMatrix<T> implements Matrix<T> {
     private static class RowsIterator<T> implements Iterator<Row<T>> {
         private final IndexMatrix<T> matrix;
         private int index = -1;
+        private boolean deleted = false;
 
         private RowsIterator(IndexMatrix<T> matrix) {
             this.matrix = matrix;
@@ -725,12 +727,17 @@ public class IndexMatrix<T> implements Matrix<T> {
             if (++index > matrix.maxRowIndex) {
                 throw new NoSuchElementException();
             }
+            deleted = false;
             return matrix.getRow(index);
         }
 
         @Override
         public void remove() {
-            throw new UnsupportedOperationException();
+            if (index < 0 || deleted) {
+                throw new IllegalStateException();
+            }
+            matrix.deleteRow(index);
+            --index;
         }
     }
 

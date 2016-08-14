@@ -1,5 +1,6 @@
 package nl.mplatvoet.collections.matrix;
 
+import java.util.Iterator;
 import java.util.Random;
 
 public class MatrixExample {
@@ -29,6 +30,15 @@ public class MatrixExample {
 
         System.out.println("==Delete row==");
         subMatrix.deleteRow(3);
+        printMatrix(subMatrix);
+        System.out.println();
+
+
+        System.out.println("==Delete rows - iterator==");
+        for (Iterator<Matrix.Row<String>> iter = subMatrix.rows().iterator(); iter.hasNext(); ) {
+            Matrix.Row<String> row = iter.next();
+            if (row.getRowIndex() > 2) iter.remove();
+        }
         printMatrix(subMatrix);
         System.out.println();
 
