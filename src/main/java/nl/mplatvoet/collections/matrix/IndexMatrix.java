@@ -4,14 +4,31 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 public class IndexMatrix<T> implements Matrix<T> {
-    private final IndexMap<IndexRow<T>> rows = new IndexMap<>();
-    private final IndexMap<Column<T>> columns = new IndexMap<>();
+    private final IndexMap<IndexRow<T>> rows;
+    private final IndexMap<Column<T>> columns;
 
     private RowsIterable<T> rowsIterable = null;
     private ColumnsIterable<T> columnsIterable = null;
 
     private int maxRowIndex = -1;
     private int maxColumnIndex = -1;
+
+    public IndexMatrix() {
+        this(0, 0);
+    }
+
+    public IndexMatrix(int initialRows, int initialColumns) {
+        if (initialRows < 0) {
+            throw new IllegalArgumentException("initialRows must be >= 0");
+        }
+        if (initialColumns < 0) {
+            throw new IllegalArgumentException("initialColumns must be >= 0");
+        }
+        maxRowIndex = initialRows - 1;
+        maxColumnIndex = initialColumns - 1;
+        rows = new IndexMap<>(initialRows);
+        columns = new IndexMap<>(initialColumns);
+    }
 
 
     @Override
@@ -364,7 +381,7 @@ public class IndexMatrix<T> implements Matrix<T> {
 
 
     private static final class IndexRow<T> implements Row<T> {
-        private final IndexMap<IndexCell<T>> cells = new IndexMap<>();
+        private final IndexMap<IndexCell<T>> cells;
         private final IndexMatrix<T> matrix;
         private final int rowIndex;
 
@@ -373,6 +390,8 @@ public class IndexMatrix<T> implements Matrix<T> {
         private IndexRow(IndexMatrix<T> matrix, int rowIndex) {
             this.matrix = matrix;
             this.rowIndex = rowIndex;
+            //prevents excess array resizing
+            cells = new IndexMap<>(matrix.maxRowIndex + 1);
         }
 
         @Override

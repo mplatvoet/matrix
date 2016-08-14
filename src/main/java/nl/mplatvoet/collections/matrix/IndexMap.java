@@ -11,14 +11,32 @@ public class IndexMap<V> implements Map<Integer, V> {
      */
     private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
 
-    @SuppressWarnings("unchecked")
-    private ValueEntry<V>[] entries = new ValueEntry[0];
+    private static final int DEFAULT_CAPACITY = 10;
+
+    private ValueEntry<V>[] entries;
 
     private int size = 0;
 
     private EntrySet entrySet = null;
     private KeySet keySet = null;
     private ValuesCollection valuesCollection = null;
+
+    public IndexMap() {
+        this(DEFAULT_CAPACITY);
+    }
+
+    @SuppressWarnings("unchecked")
+    public IndexMap(int initialCapacity) {
+        if(initialCapacity < 0) {
+            throw new IllegalArgumentException("initialCapacity must be >= 0");
+        }
+        if(initialCapacity > MAX_ARRAY_SIZE) {
+            throw new IllegalArgumentException("initialCapacity exceeds maximum capacity: " + MAX_ARRAY_SIZE);
+        }
+        initialCapacity = Math.max(initialCapacity, DEFAULT_CAPACITY);
+        entries = new ValueEntry[initialCapacity];
+
+    }
 
     @Override
     public int size() {
@@ -186,7 +204,7 @@ public class IndexMap<V> implements Map<Integer, V> {
             if (this.value == null && value == null) {
                 return true;
             }
-
+            //
             return this.value != null && this.value.equals(value);
         }
 
@@ -213,8 +231,7 @@ public class IndexMap<V> implements Map<Integer, V> {
         @Override
         public boolean contains(Object o) {
 
-            for (int i = 0; i < IndexMap.this.entries.length; ++i) {
-                ValueEntry<V> entry = IndexMap.this.entries[i];
+            for (ValueEntry<V> entry : IndexMap.this.entries) {
                 if (entry != null) {
                     V value = entry.getValue();
                     if (value == null && o == null) {
@@ -302,6 +319,7 @@ public class IndexMap<V> implements Map<Integer, V> {
 
         @Override
         public boolean containsAll(Collection<?> c) {
+            //noinspection ConstantConditions
             if (c == null) {
                 throw new NullPointerException(); //according to spec
             }
@@ -427,6 +445,7 @@ public class IndexMap<V> implements Map<Integer, V> {
 
         @Override
         public boolean containsAll(Collection<?> c) {
+            //noinspection ConstantConditions
             if (c == null) {
                 throw new NullPointerException(); //according to spec
             }
@@ -440,6 +459,7 @@ public class IndexMap<V> implements Map<Integer, V> {
 
         @Override
         public boolean addAll(Collection<? extends Entry<Integer, V>> c) {
+            //noinspection ConstantConditions
             if (c == null) {
                 throw new NullPointerException(); //according to spec
             }
@@ -452,6 +472,7 @@ public class IndexMap<V> implements Map<Integer, V> {
 
         @Override
         public boolean retainAll(Collection<?> c) {
+            //noinspection ConstantConditions
             if (c == null) {
                 throw new NullPointerException(); // according to spec
             }
@@ -462,8 +483,7 @@ public class IndexMap<V> implements Map<Integer, V> {
             }
 
             boolean modified = false;
-            for (int i = 0; i < IndexMap.this.entries.length; ++i) {
-                ValueEntry<V> entry = IndexMap.this.entries[i];
+            for (ValueEntry<V> entry : IndexMap.this.entries) {
                 if (entry != null && !c.contains(entry)) {
                     IndexMap.this.remove(entry.getKey());
                     modified = true;
@@ -475,6 +495,7 @@ public class IndexMap<V> implements Map<Integer, V> {
 
         @Override
         public boolean removeAll(Collection<?> c) {
+            //noinspection ConstantConditions
             if (c == null) {
                 throw new NullPointerException(); //according to spec
             }

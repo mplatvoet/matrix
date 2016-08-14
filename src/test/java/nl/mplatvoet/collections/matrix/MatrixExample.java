@@ -23,7 +23,7 @@ public class MatrixExample {
     }
 
     private static Matrix<String> generateMatrix(int rows, int columns) {
-        Matrix<String> m = new IndexMatrix<>();
+        Matrix<String> m = new IndexMatrix<>(rows, columns);
         Random random = new Random();
         for (int row = 0; row < rows; ++row) {
             for (int column = 0; column < columns; ++column) {
