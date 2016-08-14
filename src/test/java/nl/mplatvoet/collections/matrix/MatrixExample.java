@@ -1,6 +1,5 @@
 package nl.mplatvoet.collections.matrix;
 
-import sun.org.mozilla.javascript.internal.Function;
 
 import java.util.Iterator;
 import java.util.Random;
