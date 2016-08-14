@@ -1,10 +1,20 @@
 package nl.mplatvoet.collections.matrix;
 
 
-public interface Matrix<T>  {
-    T put(int row, int column, T value);
+public interface Matrix<T> {
+    Cell<T> getCell(int row, int column);
 
-    void fillBlanks(CellValueFactory<? extends T> factory);
+    T get(int row, int column);
+
+    Row<T> getRow(int row);
+
+    Column<T> getColumn(int column);
+
+    Iterable<Row<T>> rows();
+
+    Iterable<Column<T>> columns();
+
+    T put(int row, int column, T value);
 
     void putAll(Matrix<? extends T> matrix);
 
@@ -12,26 +22,16 @@ public interface Matrix<T>  {
 
     Matrix<T> subMatrix(int rowBeginIdx, int rowEndIdx, int columnBeginIdx, int columnEndIdx);
 
-    Matrix.Cell<T> getCell(int row, int column);
-
-    T get(int row, int column);
-
-    Matrix.Row<T> getRow(int row);
-
-    Iterable<Row<T>> rows();
-
-    Iterable<Column<T>> columns();
-
-    Column<T> getColumn(int column);
-
     void clear();
+
+    void fillBlanks(CellValueFactory<? extends T> factory);
 
     Matrix<T> shallowCopy();
 
     interface Cell<T> {
         Matrix<T> getMatrix();
 
-        Matrix.Row<T> getRow();
+        Row<T> getRow();
 
         Column<T> getColumn();
 
@@ -48,16 +48,14 @@ public interface Matrix<T>  {
         boolean isBlank();
     }
 
-    interface Column<T> extends Iterable<T> {
+    interface Line<T> extends Iterable<T> {
         Matrix<T> getMatrix();
 
-        int getColumnIndex();
+        T get(int idx);
 
-        T get(int row);
+        Cell<T> getCell(int idx);
 
-        Matrix.Cell<T> getCell(int row);
-
-        T put(int row, T value);
+        T put(int idx, T value);
 
         void clear();
 
@@ -66,21 +64,11 @@ public interface Matrix<T>  {
         Iterable<Cell<T>> cells();
     }
 
-    interface Row<T> extends Iterable<T> {
-        Matrix<T> getMatrix();
+    interface Column<T> extends Line<T> {
+        int getColumnIndex();
+    }
 
+    interface Row<T> extends Line<T> {
         int getRowIndex();
-
-        T get(int column);
-
-        Matrix.Cell<T> getCell(int column);
-
-        T put(int column, T value);
-
-        void clear();
-
-        void fillBlanks(CellValueFactory<? extends T> factory);
-
-        Iterable<Cell<T>> cells();
     }
 }
