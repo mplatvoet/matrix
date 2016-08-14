@@ -5,9 +5,9 @@ import java.util.Random;
 
 public class MatrixExample {
 
-    public static final CellValueFactory<String> PLUS_FACTORY = new CellValueFactory<String>() {
+    public static final MatrixFunction<String, String> PLUS_FACTORY = new MatrixFunction<String, String>() {
         @Override
-        public String create(int row, int column) {
+        public String apply(int row, int column, String value) {
             return "+";
         }
     };

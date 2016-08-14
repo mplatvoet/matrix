@@ -52,10 +52,10 @@ public class IndexMatrix<T> implements Matrix<T> {
     }
 
     @Override
-    public void fillBlanks(CellValueFactory<? extends T> factory) {
+    public void fillBlanks(MatrixFunction<? super T, ? extends T> function) {
         for (int rowIndex = 0; rowIndex <= maxRowIndex; ++rowIndex) {
             IndexRow<T> row = getRow(rowIndex);
-            row.fillBlanks(factory);
+            row.fillBlanks(function);
         }
     }
 
@@ -557,12 +557,12 @@ public class IndexMatrix<T> implements Matrix<T> {
         }
 
         @Override
-        public void fillBlanks(CellValueFactory<? extends T> factory) {
+        public void fillBlanks(MatrixFunction<? super T, ? extends T> function) {
             assertState();
             for (int rowIndex = 0; rowIndex <= matrix.maxRowIndex; ++rowIndex) {
                 Cell<T> cell = matrix.getRow(rowIndex).getCell(columnIndex);
                 if (cell.isBlank()) {
-                    T value = factory.create(rowIndex, columnIndex);
+                    T value = function.apply(rowIndex, columnIndex, null);
                     cell.setValue(value);
                 }
             }
@@ -680,12 +680,12 @@ public class IndexMatrix<T> implements Matrix<T> {
         }
 
         @Override
-        public void fillBlanks(CellValueFactory<? extends T> factory) {
+        public void fillBlanks(MatrixFunction<? super T, ? extends T> function) {
             assertState();
             for (int columnIndex = 0; columnIndex <= matrix.maxColumnIndex; ++columnIndex) {
                 Cell<T> cell = getCell(columnIndex);
                 if (cell.isBlank()) {
-                    T value = factory.create(rowIndex, columnIndex);
+                    T value = function.apply(rowIndex, columnIndex, null);
                     cell.setValue(value);
                 }
             }

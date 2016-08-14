@@ -49,7 +49,7 @@ public interface Matrix<T> {
 
     void clear();
 
-    void fillBlanks(CellValueFactory<? extends T> factory);
+    void fillBlanks(MatrixFunction<? super T, ? extends T> function);
 
     Matrix<T> shallowCopy();
 
@@ -84,7 +84,7 @@ public interface Matrix<T> {
 
         void clear();
 
-        void fillBlanks(CellValueFactory<? extends T> factory);
+        void fillBlanks(MatrixFunction<? super T, ? extends T> function);
 
         Iterable<Cell<T>> cells();
     }
