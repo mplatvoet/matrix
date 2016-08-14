@@ -109,6 +109,81 @@ public class IndexMatrix<T> implements Matrix<T> {
     }
 
     @Override
+    public Row<T> insertRowBefore(int row) {
+        if (row < 0) {
+            throw new IllegalArgumentException("row must be >= 0");
+        }
+        if (row <= maxRowIndex) {
+            for (int idx = maxRowIndex; idx >= row; --idx) {
+                moveRow(idx, idx + 1);
+            }
+        }
+        maxRowIndex = Math.max(maxRowIndex, row);
+        return getRow(row);
+    }
+
+    @Override
+    public Row<T> insertRowAfter(int row) {
+        return insertRowBefore(++row);
+    }
+
+    @Override
+    public Row<T> insertRowBefore(Row<T> row) {
+        validateRow(row);
+        return insertRowBefore(row.getRowIndex());
+    }
+
+    @Override
+    public Row<T> insertRowAfter(Row<T> row) {
+        validateRow(row);
+        return insertRowAfter(row.getRowIndex());
+    }
+
+    private void validateRow(Row<T> row) {
+        if (row == null) {
+            throw new IllegalArgumentException("row cannot be null");
+        }
+        if (row.getMatrix() != this) {
+            throw new IllegalStateException("row does not belong to this matrix");
+        }
+    }
+
+    //expects fromIdx to be within bounds
+    private void moveRow(int fromIdx, int toIdx) {
+        maxRowIndex = Math.max(maxRowIndex, toIdx);
+        deleteRow(toIdx);
+
+        IndexRow<T> row = rows.get(fromIdx);
+        if (row != null) {
+            updateRowIndices(row, toIdx);
+            rows.put(toIdx, row);
+        }
+
+        rows.remove(fromIdx);
+    }
+
+    //unchecked method, everything must be within bounds
+    private void updateRowIndices(IndexRow<T> row, int newIdx) {
+        row.rowIndex = newIdx;
+        for (IndexCell<T> cell : row.cells.values()) {
+            cell.rowIndex = newIdx;
+        }
+    }
+
+
+
+    public void deleteRow(int row) {
+        if (row < 0 || row > maxRowIndex) {
+            throw new IndexOutOfBoundsException("row must be >= 0 and <= " + maxRowIndex + ", but was: " + row);
+        }
+        IndexRow<T> r = rows.get(row);
+        if (r != null) {
+            r.delete();
+            rows.remove(row);
+        }
+    }
+
+    @Override
     public Matrix<T> subMatrix(int rowBeginIdx, int rowEndIdx, int columnBeginIdx, int columnEndIdx) {
         if (rowBeginIdx < 0 || rowBeginIdx > maxRowIndex) {
             throw new IndexOutOfBoundsException("rowBeginIdx must be >= 0 and <= " + maxRowIndex + ", but was: " + rowBeginIdx);
@@ -380,7 +455,9 @@ public class IndexMatrix<T> implements Matrix<T> {
     private static final class IndexRow<T> implements Row<T> {
         private final IndexMap<IndexCell<T>> cells;
         private final IndexMatrix<T> matrix;
-        private final int rowIndex;
+        private int rowIndex;
+
+        private boolean deleted = false;
 
         private RowCellsIterable<T> cellsIterable = null;
 
@@ -393,19 +470,22 @@ public class IndexMatrix<T> implements Matrix<T> {
 
         @Override
         public Matrix<T> getMatrix() {
+            assertState();
             return matrix;
         }
 
         @Override
         public int getRowIndex() {
+            assertState();
             return rowIndex;
         }
 
         public T put(int column, T value) {
+            assertState();
             T previous = null;
             IndexCell<T> cell = cells.get(column);
             if (cell == null) {
-                cell = new IndexCell<>(this, column);
+                cell = new IndexCell<>(matrix, rowIndex, column);
                 cells.put(column, cell);
             } else {
                 previous = cell.getValue();
@@ -420,12 +500,13 @@ public class IndexMatrix<T> implements Matrix<T> {
 
         @Override
         public Cell<T> getCell(int column) {
+            assertState();
             if (column < 0 || column > matrix.maxColumnIndex) {
                 throw new IndexOutOfBoundsException("Column must be >= 0 and <= " + matrix.maxColumnIndex + ", but was: " + column);
             }
             IndexCell<T> cell = cells.get(column);
             if (cell == null) {
-                cell = new IndexCell<>(this, column);
+                cell = new IndexCell<>(matrix, rowIndex, column);
                 cells.put(column, cell);
             }
             return cell;
@@ -433,6 +514,7 @@ public class IndexMatrix<T> implements Matrix<T> {
 
         @Override
         public T get(int column) {
+            assertState();
             if (column < 0 || column > matrix.maxColumnIndex) {
                 throw new IndexOutOfBoundsException("Column must be >= 0 and <= " + matrix.maxColumnIndex + ", but was: " + column);
             }
@@ -442,6 +524,7 @@ public class IndexMatrix<T> implements Matrix<T> {
 
         @Override
         public void clear() {
+            assertState();
             for (IndexCell<T> cell : cells.values()) {
                 cell.clear();
             }
@@ -449,6 +532,7 @@ public class IndexMatrix<T> implements Matrix<T> {
 
         @Override
         public void fillBlanks(CellValueFactory<? extends T> factory) {
+            assertState();
             for (int columnIndex = 0; columnIndex <= matrix.maxColumnIndex; ++columnIndex) {
                 Cell<T> cell = getCell(columnIndex);
                 if (cell.isBlank()) {
@@ -460,15 +544,35 @@ public class IndexMatrix<T> implements Matrix<T> {
 
         @Override
         public Iterator<T> iterator() {
+            assertState();
             return new RowIterator<>(this);
         }
 
         @Override
         public Iterable<Cell<T>> cells() {
+            assertState();
             if (cellsIterable == null) {
                 cellsIterable = new RowCellsIterable<>(this);
             }
             return cellsIterable;
+        }
+
+        public void delete() {
+            if (deleted) return;
+
+
+            for (IndexCell<T> cell : cells.values()) {
+                cell.delete();
+            }
+
+            cells.clear();
+            deleted = true;
+        }
+
+        private void assertState() {
+            if (deleted) {
+                throw new IllegalStateException("row has been deleted");
+            }
         }
     }
 
@@ -476,18 +580,22 @@ public class IndexMatrix<T> implements Matrix<T> {
     private static final class IndexCell<T> implements Cell<T> {
         private static final Object BLANK = new Object();
 
-        private final IndexRow<T> row;
-        private final int columnIndex;
+        private IndexMatrix<T> matrix;
+        private int rowIndex;
+        private int columnIndex;
         private T value;
 
-        private IndexCell(IndexRow<T> row, int columnIndex, T value) {
-            this.row = row;
+        private boolean deleted = false;
+
+        private IndexCell(IndexMatrix<T> matrix, int rowIndex, int columnIndex, T value) {
+            this.matrix = matrix;
+            this.rowIndex = rowIndex;
             this.columnIndex = columnIndex;
             this.value = value;
         }
 
-        private IndexCell(IndexRow<T> row, int column) {
-            this(row, column, IndexCell.<T>blank());
+        private IndexCell(IndexMatrix<T> matrix, int rowIndex, int columnIndex) {
+            this(matrix, rowIndex, columnIndex, IndexCell.<T>blank());
         }
 
         @SuppressWarnings("unchecked")
@@ -497,46 +605,55 @@ public class IndexMatrix<T> implements Matrix<T> {
 
         @Override
         public Matrix<T> getMatrix() {
-            return row.getMatrix();
+            assertState();
+            return matrix;
         }
 
         @Override
         public Row<T> getRow() {
-            return row;
+            assertState();
+            return matrix.getRow(rowIndex);
         }
 
         @Override
         public Column<T> getColumn() {
-            return row.matrix.getColumn(columnIndex);
+            assertState();
+            return matrix.getColumn(columnIndex);
         }
 
         @Override
         public T getValue() {
+            assertState();
             return value == BLANK ? null : value;
         }
 
         @Override
         public void setValue(T value) {
+            assertState();
             this.value = value;
         }
 
         @Override
         public void clear() {
+            assertState();
             this.value = blank();
         }
 
         @Override
         public int getColumnIndex() {
+            assertState();
             return columnIndex;
         }
 
         @Override
         public int getRowIndex() {
-            return row.getRowIndex();
+            assertState();
+            return rowIndex;
         }
 
         @Override
         public boolean isBlank() {
+            assertState();
             return value == BLANK;
         }
 
@@ -544,16 +661,36 @@ public class IndexMatrix<T> implements Matrix<T> {
         public String toString() {
             StringBuilder sb = new StringBuilder();
             sb.append("(Cell ");
-            sb.append(row.getRowIndex());
-            sb.append(":");
-            sb.append(columnIndex);
-            if (!isBlank()) {
-                sb.append(" [");
-                sb.append(getValue());
-                sb.append("]");
+            if (deleted) {
+                sb.append("--deleted--");
+            } else {
+                sb.append(rowIndex);
+                sb.append(":");
+                sb.append(columnIndex);
+                if (!isBlank()) {
+                    sb.append(" [");
+                    sb.append(getValue());
+                    sb.append("]");
+                }
             }
             sb.append(")");
             return sb.toString();
+        }
+
+        public void delete() {
+            if (deleted) return;
+
+            //prevent leaking
+            value = null;
+            matrix = null;
+
+            deleted = true;
+        }
+
+        private void assertState() {
+            if (deleted) {
+                throw new IllegalStateException("row has been deleted");
+            }
         }
     }
 

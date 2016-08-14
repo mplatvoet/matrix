@@ -3,6 +3,14 @@ package nl.mplatvoet.collections.matrix;
 import java.util.Random;
 
 public class MatrixExample {
+
+    public static final CellValueFactory<String> PLUS_FACTORY = new CellValueFactory<String>() {
+        @Override
+        public String create(int row, int column) {
+            return "+";
+        }
+    };
+
     public static void main(String[] args) throws Exception {
         Matrix<String> matrix = generateMatrix(10, 20);
         System.out.println("==Generated matrix==");
@@ -13,6 +21,12 @@ public class MatrixExample {
         Matrix<String> subMatrix = matrix.subMatrix(2, 8, 5, 15);
         printMatrix(subMatrix);
         System.out.println();
+
+        System.out.println("==Insert matrix==");
+        subMatrix.insertRowBefore(3).fillBlanks(PLUS_FACTORY);
+        printMatrix(subMatrix);
+        System.out.println();
+
 
         System.out.println("==Copy matrix==");
         Matrix<String> copy = matrix.shallowCopy();

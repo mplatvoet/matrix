@@ -20,6 +20,14 @@ public interface Matrix<T> {
 
     void putAll(Matrix<? extends T> matrix, int rowOffset, int columnOffset);
 
+    Row<T> insertRowBefore(int row);
+
+    Row<T> insertRowAfter(int row);
+
+    Row<T> insertRowBefore(Row<T> row);
+
+    Row<T> insertRowAfter(Row<T> row);
+
     Matrix<T> subMatrix(int rowBeginIdx, int rowEndIdx, int columnBeginIdx, int columnEndIdx);
 
     void clear();
