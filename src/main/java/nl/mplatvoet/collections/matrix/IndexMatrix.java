@@ -314,10 +314,7 @@ public class IndexMatrix<T> implements Matrix<T> {
                 throw new IndexOutOfBoundsException("Row must be >= 0 and <= " + matrix.maxRowIndex + ", but was: " + row);
             }
             IndexRow<T> r = matrix.rows.get(row);
-            if (r != null) {
-                return r.get(columnIndex);
-            }
-            return null;
+            return r != null ? r.get(columnIndex) : null;
         }
 
         @Override
@@ -362,7 +359,7 @@ public class IndexMatrix<T> implements Matrix<T> {
             for (int rowIndex = 0; rowIndex <= matrix.maxRowIndex; ++rowIndex) {
                 Cell<T> cell = matrix.getRow(rowIndex).getCell(columnIndex);
                 if (cell.isBlank()) {
-                    T value = factory.create(rowIndex, rowIndex);
+                    T value = factory.create(rowIndex, columnIndex);
                     cell.setValue(value);
                 }
             }
@@ -655,12 +652,12 @@ public class IndexMatrix<T> implements Matrix<T> {
 
         @Override
         public boolean hasNext() {
-            return index < column.matrix.maxColumnIndex;
+            return index < column.matrix.maxRowIndex;
         }
 
         @Override
         public T next() {
-            if (++index > column.matrix.maxColumnIndex) {
+            if (++index > column.matrix.maxRowIndex) {
                 throw new NoSuchElementException();
             }
             return column.get(index);
@@ -683,12 +680,12 @@ public class IndexMatrix<T> implements Matrix<T> {
 
         @Override
         public boolean hasNext() {
-            return index < row.matrix.maxRowIndex;
+            return index < row.matrix.maxColumnIndex;
         }
 
         @Override
         public Cell<T> next() {
-            if (++index > row.matrix.maxRowIndex) {
+            if (++index > row.matrix.maxColumnIndex) {
                 throw new NoSuchElementException();
             }
             return row.getCell(index);
@@ -711,12 +708,12 @@ public class IndexMatrix<T> implements Matrix<T> {
 
         @Override
         public boolean hasNext() {
-            return index < column.matrix.maxColumnIndex;
+            return index < column.matrix.maxRowIndex;
         }
 
         @Override
         public Cell<T> next() {
-            if (++index > column.matrix.maxColumnIndex) {
+            if (++index > column.matrix.maxRowIndex) {
                 throw new NoSuchElementException();
             }
             return column.getCell(index);
