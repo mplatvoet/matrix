@@ -69,6 +69,16 @@ public class MatrixExample {
             }
         });
         printMatrix(numbers);
+        System.out.println();
+
+        System.out.println("==Map function==");
+        Matrix<String> strings = numbers.map(new MatrixFunction<Integer, String>() {
+            @Override
+            public String apply(int row, int column, Integer value) {
+                return "<" + value + ">";
+            }
+        });
+        printMatrix(strings);
     }
 
     private static Matrix<String> generateMatrix(int rows, int columns) {
@@ -76,7 +86,7 @@ public class MatrixExample {
         Random random = new Random();
         for (int row = 0; row < rows; ++row) {
             for (int column = 0; column < columns; ++column) {
-                if(random.nextInt(3) == 0){
+                if (random.nextInt(3) == 0) {
                     m.put(row, column, "*");
                 }
             }

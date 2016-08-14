@@ -53,6 +53,8 @@ public interface Matrix<T> {
 
     void fillBlanks(MatrixFunction<? super T, ? extends T> function);
 
+    <R> Matrix<R> map(MatrixFunction<? super T, ? extends R> function);
+
     Matrix<T> shallowCopy();
 
     int getRowSize();

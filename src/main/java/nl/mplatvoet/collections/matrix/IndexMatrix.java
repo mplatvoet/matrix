@@ -82,6 +82,27 @@ public class IndexMatrix<T> implements Matrix<T> {
     }
 
     @Override
+    public <R> Matrix<R> map(MatrixFunction<? super T, ? extends R> function) {
+        if (function == null) {
+            throw new IllegalArgumentException("function cannot be null");
+        }
+        Matrix<R> target = new IndexMatrix<>(getRowSize(), getColumnSize());
+
+        for (IndexRow<T> row : rows.values()) {
+            for (IndexCell<T> cell : row.cells.values()) {
+                if (!cell.isBlank()) {
+                    int rowIndex = cell.getRowIndex();
+                    int columnIndex = cell.getColumnIndex();
+
+                    R result = function.apply(rowIndex, columnIndex, cell.getValue());
+                    target.put(rowIndex, columnIndex, result);
+                }
+            }
+        }
+        return target;
+    }
+
+    @Override
     public void putAll(Matrix<? extends T> matrix) {
         putAll(matrix, 0, 0);
     }
