@@ -872,6 +872,7 @@ public class IndexMatrix<T> implements Matrix<T> {
                 throw new IllegalStateException();
             }
             matrix.deleteRow(index);
+            deleted = true;
             --index;
         }
     }
@@ -880,6 +881,7 @@ public class IndexMatrix<T> implements Matrix<T> {
     private static class RowIterator<T> implements Iterator<T> {
         private final IndexRow<T> row;
         private int index = -1;
+        private boolean deleted = false;
 
         private RowIterator(IndexRow<T> row) {
             this.row = row;
@@ -895,12 +897,20 @@ public class IndexMatrix<T> implements Matrix<T> {
             if (++index > row.matrix.maxColumnIndex) {
                 throw new NoSuchElementException();
             }
+            deleted = false;
             return row.get(index);
         }
 
         @Override
         public void remove() {
-            throw new UnsupportedOperationException();
+            if (index < 0 || deleted) {
+                throw new IllegalStateException();
+            }
+            deleted = true;
+            IndexCell<T> cell = row.cells.get(index);
+            if (cell != null) {
+                cell.clear();
+            }
         }
     }
 
@@ -908,6 +918,7 @@ public class IndexMatrix<T> implements Matrix<T> {
     private static class ColumnsIterator<T> implements Iterator<Column<T>> {
         private final IndexMatrix<T> matrix;
         private int index = -1;
+        private boolean deleted = false;
 
 
         private ColumnsIterator(IndexMatrix<T> matrix) {
@@ -924,18 +935,25 @@ public class IndexMatrix<T> implements Matrix<T> {
             if (++index > matrix.maxColumnIndex) {
                 throw new NoSuchElementException();
             }
+            deleted = false;
             return matrix.getColumn(index);
         }
 
         @Override
         public void remove() {
-            throw new UnsupportedOperationException();
+            if (index < 0 || deleted) {
+                throw new IllegalStateException();
+            }
+            matrix.deleteColumn(index);
+            deleted = true;
+            --index;
         }
     }
 
     private static class ColumnIterator<T> implements Iterator<T> {
         private final IndexColumn<T> column;
         private int index = -1;
+        private boolean deleted = false;
 
 
         private ColumnIterator(IndexColumn<T> column) {
@@ -957,13 +975,24 @@ public class IndexMatrix<T> implements Matrix<T> {
 
         @Override
         public void remove() {
-            throw new UnsupportedOperationException();
+            if (index < 0 || deleted) {
+                throw new IllegalStateException();
+            }
+            deleted = true;
+            IndexRow<T> row = column.matrix.rows.get(index);
+            if (row != null) {
+                IndexCell<T> cell = row.cells.get(column.columnIndex);
+                if (cell != null) {
+                    cell.clear();
+                }
+            }
         }
     }
 
     private static class RowCellIterator<T> implements Iterator<Cell<T>> {
         private final IndexRow<T> row;
         private int index = -1;
+        private boolean deleted = false;
 
 
         private RowCellIterator(IndexRow<T> row) {
@@ -980,18 +1009,24 @@ public class IndexMatrix<T> implements Matrix<T> {
             if (++index > row.matrix.maxColumnIndex) {
                 throw new NoSuchElementException();
             }
+            deleted = false;
             return row.getCell(index);
         }
 
         @Override
         public void remove() {
-            throw new UnsupportedOperationException();
+            if (index < 0 || deleted) {
+                throw new IllegalStateException();
+            }
+            deleted = true;
+            row.getCell(index).clear();
         }
     }
 
     private static class ColumnCellIterator<T> implements Iterator<Cell<T>> {
         private final IndexColumn<T> column;
         private int index = -1;
+        private boolean deleted = false;
 
 
         private ColumnCellIterator(IndexColumn<T> column) {
@@ -1008,12 +1043,17 @@ public class IndexMatrix<T> implements Matrix<T> {
             if (++index > column.matrix.maxRowIndex) {
                 throw new NoSuchElementException();
             }
+            deleted = false;
             return column.getCell(index);
         }
 
         @Override
         public void remove() {
-            throw new UnsupportedOperationException();
+            if (index < 0 || deleted) {
+                throw new IllegalStateException();
+            }
+            deleted = true;
+            column.getCell(index).clear();
         }
     }
 

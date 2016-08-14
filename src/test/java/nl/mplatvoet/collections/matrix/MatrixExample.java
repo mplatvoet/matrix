@@ -19,7 +19,7 @@ public class MatrixExample {
         System.out.println();
 
         System.out.println("==Sub matrix==");
-        Matrix<String> subMatrix = matrix.subMatrix(2, 8, 5, 15);
+        Matrix<String> subMatrix = matrix.subMatrix(0, 6, 0, 10);
         printMatrix(subMatrix);
         System.out.println();
 
@@ -34,12 +34,12 @@ public class MatrixExample {
         System.out.println();
 
         System.out.println("==Insert column==");
-        subMatrix.insertColumnBefore(4).fillBlanks(PLUS_FACTORY);
+        subMatrix.insertColumnBefore(5).fillBlanks(PLUS_FACTORY);
         printMatrix(subMatrix);
         System.out.println();
 
         System.out.println("==Delete column==");
-        subMatrix.deleteColumn(4);
+        subMatrix.deleteColumn(5);
         printMatrix(subMatrix);
         System.out.println();
 
@@ -47,7 +47,15 @@ public class MatrixExample {
         System.out.println("==Delete rows - iterator==");
         for (Iterator<Matrix.Row<String>> iter = subMatrix.rows().iterator(); iter.hasNext(); ) {
             Matrix.Row<String> row = iter.next();
-            if (row.getRowIndex() > 2) iter.remove();
+            if (row.getRowIndex() > 3) iter.remove();
+        }
+        printMatrix(subMatrix);
+        System.out.println();
+
+        System.out.println("==Delete columns - iterator==");
+        for (Iterator<Matrix.Column<String>> iter = subMatrix.columns().iterator(); iter.hasNext(); ) {
+            Matrix.Column<String> column = iter.next();
+            if (column.getColumnIndex() > 5) iter.remove();
         }
         printMatrix(subMatrix);
         System.out.println();
