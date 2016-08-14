@@ -1,5 +1,7 @@
 package nl.mplatvoet.collections.matrix;
 
+import sun.org.mozilla.javascript.internal.Function;
+
 import java.util.Iterator;
 import java.util.Random;
 
@@ -60,13 +62,14 @@ public class MatrixExample {
         printMatrix(subMatrix);
         System.out.println();
 
-
-        System.out.println("==Copy matrix==");
-        Matrix<String> copy = matrix.shallowCopy();
-        System.out.println("original == copy:      " + (matrix == copy));
-        System.out.println("original.equals(copy): " + (matrix.equals(copy)));
-        System.out.println("orginal hashCode: " + matrix.hashCode());
-        System.out.println("copy hashCode:    " + copy.hashCode());
+        System.out.println("==Fill function==");
+        Matrix<Integer> numbers = generateMatrix(5, 5, new MatrixFunction<Integer, Integer>() {
+            @Override
+            public Integer apply(int row, int column, Integer value) {
+                return ++row + column;
+            }
+        });
+        printMatrix(numbers);
     }
 
     private static Matrix<String> generateMatrix(int rows, int columns) {
@@ -80,6 +83,10 @@ public class MatrixExample {
             }
         }
         return m;
+    }
+
+    private static <T> Matrix<T> generateMatrix(int rows, int columns, MatrixFunction<? super T, ? extends T> fn) {
+        return new IndexMatrix<>(rows, columns, fn);
     }
 
     private static void printMatrix(Matrix<?> matrix) {

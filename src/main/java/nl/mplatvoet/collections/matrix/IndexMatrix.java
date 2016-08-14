@@ -14,10 +14,14 @@ public class IndexMatrix<T> implements Matrix<T> {
     private int maxColumnIndex = -1;
 
     public IndexMatrix() {
-        this(0, 0);
+        this(0, 0, null);
     }
 
     public IndexMatrix(int initialRows, int initialColumns) {
+        this(initialRows, initialColumns, null);
+    }
+
+    public IndexMatrix(int initialRows, int initialColumns, MatrixFunction<? super T, ? extends T> function) {
         if (initialRows < 0) {
             throw new IllegalArgumentException("initialRows must be >= 0");
         }
@@ -28,6 +32,10 @@ public class IndexMatrix<T> implements Matrix<T> {
         maxColumnIndex = initialColumns - 1;
         rows = new IndexMap<>(initialRows);
         columns = new IndexMap<>(initialColumns);
+
+        if (function != null) {
+            fill(function);
+        }
     }
 
 
@@ -53,9 +61,23 @@ public class IndexMatrix<T> implements Matrix<T> {
 
     @Override
     public void fillBlanks(MatrixFunction<? super T, ? extends T> function) {
+        if (function == null) {
+            throw new IllegalArgumentException("function cannot be null");
+        }
         for (int rowIndex = 0; rowIndex <= maxRowIndex; ++rowIndex) {
             IndexRow<T> row = getRow(rowIndex);
             row.fillBlanks(function);
+        }
+    }
+
+    @Override
+    public void fill(MatrixFunction<? super T, ? extends T> function) {
+        if (function == null) {
+            throw new IllegalArgumentException("function cannot be null");
+        }
+        for (int rowIndex = 0; rowIndex <= maxRowIndex; ++rowIndex) {
+            IndexRow<T> row = getRow(rowIndex);
+            row.fill(function);
         }
     }
 
@@ -447,6 +469,16 @@ public class IndexMatrix<T> implements Matrix<T> {
     }
 
     @Override
+    public int getRowSize() {
+        return maxRowIndex + 1;
+    }
+
+    @Override
+    public int getColumnSize() {
+        return maxColumnIndex + 1;
+    }
+
+    @Override
     public Matrix<T> shallowCopy() {
         return subMatrixInternal(0, maxRowIndex + 1, 0, maxColumnIndex + 1);
     }
@@ -569,6 +601,16 @@ public class IndexMatrix<T> implements Matrix<T> {
         }
 
         @Override
+        public void fill(MatrixFunction<? super T, ? extends T> function) {
+            assertState();
+            for (int rowIndex = 0; rowIndex <= matrix.maxRowIndex; ++rowIndex) {
+                Cell<T> cell = matrix.getRow(rowIndex).getCell(columnIndex);
+                T value = function.apply(rowIndex, columnIndex, null);
+                cell.setValue(value);
+            }
+        }
+
+        @Override
         public void clear() {
             assertState();
             for (IndexRow<T> row : matrix.rows.values()) {
@@ -676,6 +718,16 @@ public class IndexMatrix<T> implements Matrix<T> {
             assertState();
             for (IndexCell<T> cell : cells.values()) {
                 cell.clear();
+            }
+        }
+
+        @Override
+        public void fill(MatrixFunction<? super T, ? extends T> function) {
+            assertState();
+            for (int columnIndex = 0; columnIndex <= matrix.maxColumnIndex; ++columnIndex) {
+                Cell<T> cell = getCell(columnIndex);
+                T value = function.apply(rowIndex, columnIndex, null);
+                cell.setValue(value);
             }
         }
 

@@ -49,9 +49,16 @@ public interface Matrix<T> {
 
     void clear();
 
+    void fill(MatrixFunction<? super T, ? extends T> function);
+
     void fillBlanks(MatrixFunction<? super T, ? extends T> function);
 
     Matrix<T> shallowCopy();
+
+    int getRowSize();
+
+    int getColumnSize();
+
 
     interface Cell<T> {
         Matrix<T> getMatrix();
@@ -83,6 +90,8 @@ public interface Matrix<T> {
         T put(int idx, T value);
 
         void clear();
+
+        void fill(MatrixFunction<? super T, ? extends T> function);
 
         void fillBlanks(MatrixFunction<? super T, ? extends T> function);
 
