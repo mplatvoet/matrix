@@ -33,6 +33,16 @@ public class MatrixExample {
         printMatrix(subMatrix);
         System.out.println();
 
+        System.out.println("==Insert column==");
+        subMatrix.insertColumnBefore(4).fillBlanks(PLUS_FACTORY);
+        printMatrix(subMatrix);
+        System.out.println();
+
+        System.out.println("==Delete column==");
+        subMatrix.deleteColumn(4);
+        printMatrix(subMatrix);
+        System.out.println();
+
 
         System.out.println("==Delete rows - iterator==");
         for (Iterator<Matrix.Row<String>> iter = subMatrix.rows().iterator(); iter.hasNext(); ) {

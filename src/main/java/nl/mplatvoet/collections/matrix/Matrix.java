@@ -28,9 +28,22 @@ public interface Matrix<T> {
 
     Row<T> insertRowAfter(Row<T> row);
 
+    Column<T> insertColumnBefore(int column);
+
+    Column<T> insertColumnAfter(int column);
+
+    Column<T> insertColumnBefore(Column<T> column);
+
+    Column<T> insertColumnAfter(Column<T> column);
+
+
     void deleteRow(int row);
 
     void deleteRow(Row<T> row);
+
+    void deleteColumn(int column);
+
+    void deleteColumn(Column<T> column);
 
     Matrix<T> subMatrix(int rowBeginIdx, int rowEndIdx, int columnBeginIdx, int columnEndIdx);
 
