@@ -28,6 +28,10 @@ public interface Matrix<T> {
 
     Row<T> insertRowAfter(Row<T> row);
 
+    void deleteRow(int row);
+
+    void deleteRow(Row<T> row);
+
     Matrix<T> subMatrix(int rowBeginIdx, int rowEndIdx, int columnBeginIdx, int columnEndIdx);
 
     void clear();

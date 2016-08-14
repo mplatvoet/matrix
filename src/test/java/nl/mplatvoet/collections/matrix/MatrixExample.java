@@ -22,8 +22,13 @@ public class MatrixExample {
         printMatrix(subMatrix);
         System.out.println();
 
-        System.out.println("==Insert matrix==");
+        System.out.println("==Insert row==");
         subMatrix.insertRowBefore(3).fillBlanks(PLUS_FACTORY);
+        printMatrix(subMatrix);
+        System.out.println();
+
+        System.out.println("==Delete row==");
+        subMatrix.deleteRow(3);
         printMatrix(subMatrix);
         System.out.println();
 

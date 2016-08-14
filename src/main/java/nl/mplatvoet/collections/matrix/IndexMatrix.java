@@ -139,6 +139,23 @@ public class IndexMatrix<T> implements Matrix<T> {
         return insertRowAfter(row.getRowIndex());
     }
 
+    @Override
+    public void deleteRow(int row) {
+        if (row < 0 || row > maxRowIndex) {
+            throw new IndexOutOfBoundsException("row must be >= 0 and <= " + maxRowIndex + ", but was: " + row);
+        }
+        evictRow(row);
+        for (int idx = row +1; idx <= maxRowIndex; ++idx) {
+            moveRow(idx, idx -1);
+        }
+    }
+
+    @Override
+    public void deleteRow(Row<T> row) {
+        validateRow(row);
+        deleteRow(row.getRowIndex());
+    }
+
     private void validateRow(Row<T> row) {
         if (row == null) {
             throw new IllegalArgumentException("row cannot be null");
@@ -151,7 +168,7 @@ public class IndexMatrix<T> implements Matrix<T> {
     //expects fromIdx to be within bounds
     private void moveRow(int fromIdx, int toIdx) {
         maxRowIndex = Math.max(maxRowIndex, toIdx);
-        deleteRow(toIdx);
+        evictRow(toIdx);
 
         IndexRow<T> row = rows.get(fromIdx);
         if (row != null) {
@@ -171,11 +188,7 @@ public class IndexMatrix<T> implements Matrix<T> {
     }
 
 
-
-    public void deleteRow(int row) {
-        if (row < 0 || row > maxRowIndex) {
-            throw new IndexOutOfBoundsException("row must be >= 0 and <= " + maxRowIndex + ", but was: " + row);
-        }
+    private void evictRow(int row) {
         IndexRow<T> r = rows.get(row);
         if (r != null) {
             r.delete();
