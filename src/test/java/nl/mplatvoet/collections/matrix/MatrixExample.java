@@ -20,7 +20,7 @@ public class MatrixExample {
         System.out.println();
 
         System.out.println("==Sub matrix==");
-        Matrix<String> subMatrix = matrix.subMatrix(0, 6, 0, 10);
+        Matrix<String> subMatrix = matrix.map(0, 6, 0, 10);
         printMatrix(subMatrix);
         System.out.println();
 

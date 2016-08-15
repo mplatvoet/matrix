@@ -4,6 +4,13 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 public class IndexMatrix<T> implements Matrix<T> {
+    private static final MatrixFunction<Object, Object> PASS_TROUGH_FUNCTION = new MatrixFunction<Object, Object>() {
+        @Override
+        public Object apply(int row, int column, Object value) {
+            return value;
+        }
+    };
+
     private final IndexMap<IndexRow<T>> rows;
     private final IndexMap<IndexColumn<T>> columns;
 
@@ -79,27 +86,6 @@ public class IndexMatrix<T> implements Matrix<T> {
             IndexRow<T> row = getRow(rowIndex);
             row.fill(function);
         }
-    }
-
-    @Override
-    public <R> Matrix<R> map(MatrixFunction<? super T, ? extends R> function) {
-        if (function == null) {
-            throw new IllegalArgumentException("function cannot be null");
-        }
-        Matrix<R> target = new IndexMatrix<>(getRowSize(), getColumnSize());
-
-        for (IndexRow<T> row : rows.values()) {
-            for (IndexCell<T> cell : row.cells.values()) {
-                if (!cell.isBlank()) {
-                    int rowIndex = cell.getRowIndex();
-                    int columnIndex = cell.getColumnIndex();
-
-                    R result = function.apply(rowIndex, columnIndex, cell.getValue());
-                    target.put(rowIndex, columnIndex, result);
-                }
-            }
-        }
-        return target;
     }
 
     @Override
@@ -345,47 +331,6 @@ public class IndexMatrix<T> implements Matrix<T> {
     }
 
     @Override
-    public Matrix<T> subMatrix(int rowBeginIdx, int rowEndIdx, int columnBeginIdx, int columnEndIdx) {
-        if (rowBeginIdx < 0 || rowBeginIdx > maxRowIndex) {
-            throw new IndexOutOfBoundsException("rowBeginIdx must be >= 0 and <= " + maxRowIndex + ", but was: " + rowBeginIdx);
-        }
-        if (rowEndIdx < 0 || rowEndIdx - 1 > maxRowIndex) {
-            throw new IndexOutOfBoundsException("rowBeginIdx must be >= 0 and <= " + (maxRowIndex + 1) + ", but was: " + rowEndIdx);
-        }
-        if (columnBeginIdx < 0 || columnBeginIdx > maxColumnIndex) {
-            throw new IndexOutOfBoundsException("columnBeginIdx must be >= 0 and <= " + maxColumnIndex + ", but was: " + columnBeginIdx);
-        }
-        if (columnEndIdx < 0 || columnEndIdx - 1 > maxColumnIndex) {
-            throw new IndexOutOfBoundsException("columnEndIdx must be >= 0 and <= " + (maxColumnIndex + 1) + ", but was: " + columnEndIdx);
-        }
-        if (rowBeginIdx > rowEndIdx) {
-            throw new IndexOutOfBoundsException("rowBeginIdx[" + rowBeginIdx + "] cannot be larger as rowEndIdx[" + rowEndIdx + "]");
-        }
-        if (columnBeginIdx > columnEndIdx) {
-            throw new IndexOutOfBoundsException("columnBeginIdx[" + columnBeginIdx + "] cannot be larger as columnEndIdx[" + columnEndIdx + "]");
-        }
-        return subMatrixInternal(rowBeginIdx, rowEndIdx, columnBeginIdx, columnEndIdx);
-    }
-
-    private Matrix<T> subMatrixInternal(int rowBeginIdx, int rowEndIdx, int columnBeginIdx, int columnEndIdx) {
-        IndexMatrix<T> m = new IndexMatrix<>();
-
-        for (int rowIdx = rowBeginIdx; rowIdx < rowEndIdx; ++rowIdx) {
-            IndexRow<T> row = rows.get(rowIdx);
-            if (row != null) {
-                for (int columnIdx = columnBeginIdx; columnIdx < columnEndIdx; ++columnIdx) {
-                    IndexCell<T> cell = row.cells.get(columnIdx);
-                    if (cell != null && !cell.isBlank()) {
-                        m.put(rowIdx - rowBeginIdx, columnIdx - columnBeginIdx, cell.getValue());
-                    }
-                }
-            }
-        }
-
-        return m;
-    }
-
-    @Override
     public Cell<T> getCell(int row, int column) {
         return getRow(row).getCell(column);
     }
@@ -500,8 +445,93 @@ public class IndexMatrix<T> implements Matrix<T> {
     }
 
     @Override
-    public Matrix<T> shallowCopy() {
-        return subMatrixInternal(0, maxRowIndex + 1, 0, maxColumnIndex + 1);
+    public Matrix<T> map() {
+        IndexMatrix<T> matrix = new IndexMatrix<>(getRowSize(), getColumnSize());
+        map(matrix, 0, getRowSize(), 0, getColumnSize(), passTroughFunction());
+        return matrix;
+    }
+
+    @Override
+    public <R> Matrix<R> map(MatrixFunction<? super T, ? extends R> function) {
+        if (function == null) {
+            throw new IllegalArgumentException("function cannot be null");
+        }
+
+        IndexMatrix<R> matrix = new IndexMatrix<>(getRowSize(), getColumnSize());
+        map(matrix, 0, getRowSize(), 0, getColumnSize(), function);
+        return matrix;
+    }
+
+    @Override
+    public Matrix<T> map(int rowBeginIdx, int rowEndIdx,
+                         int columnBeginIdx, int columnEndIdx) {
+        validateIndices(rowBeginIdx, rowEndIdx, columnBeginIdx, columnEndIdx);
+
+        IndexMatrix<T> result = new IndexMatrix<>(rowEndIdx - rowBeginIdx, columnEndIdx - columnBeginIdx);
+
+        map(result, rowBeginIdx, rowEndIdx, columnBeginIdx, columnEndIdx, passTroughFunction());
+        return result;
+    }
+
+    @Override
+    public <R> Matrix<R> map(int rowBeginIdx, int rowEndIdx,
+                             int columnBeginIdx, int columnEndIdx,
+                             MatrixFunction<? super T, ? extends R> function) {
+        validateIndices(rowBeginIdx, rowEndIdx, columnBeginIdx, columnEndIdx);
+
+        if (function == null) {
+            throw new IllegalArgumentException("function cannot be null");
+        }
+
+        IndexMatrix<R> result = new IndexMatrix<>(rowEndIdx - rowBeginIdx, columnEndIdx - columnBeginIdx);
+
+        map(result, rowBeginIdx, rowEndIdx, columnBeginIdx, columnEndIdx, function);
+        return result;
+    }
+
+    private void validateIndices(int rowBeginIdx, int rowEndIdx, int columnBeginIdx, int columnEndIdx) {
+        if (rowBeginIdx < 0 || rowBeginIdx > maxRowIndex) {
+            throw new IndexOutOfBoundsException("rowBeginIdx must be >= 0 and <= " + maxRowIndex + ", but was: " + rowBeginIdx);
+        }
+        if (rowEndIdx < 0 || rowEndIdx - 1 > maxRowIndex) {
+            throw new IndexOutOfBoundsException("rowBeginIdx must be >= 0 and <= " + (maxRowIndex + 1) + ", but was: " + rowEndIdx);
+        }
+        if (columnBeginIdx < 0 || columnBeginIdx > maxColumnIndex) {
+            throw new IndexOutOfBoundsException("columnBeginIdx must be >= 0 and <= " + maxColumnIndex + ", but was: " + columnBeginIdx);
+        }
+        if (columnEndIdx < 0 || columnEndIdx - 1 > maxColumnIndex) {
+            throw new IndexOutOfBoundsException("columnEndIdx must be >= 0 and <= " + (maxColumnIndex + 1) + ", but was: " + columnEndIdx);
+        }
+        if (rowBeginIdx > rowEndIdx) {
+            throw new IndexOutOfBoundsException("rowBeginIdx[" + rowBeginIdx + "] cannot be larger as rowEndIdx[" + rowEndIdx + "]");
+        }
+        if (columnBeginIdx > columnEndIdx) {
+            throw new IndexOutOfBoundsException("columnBeginIdx[" + columnBeginIdx + "] cannot be larger as columnEndIdx[" + columnEndIdx + "]");
+        }
+    }
+
+
+    private <R> void map(IndexMatrix<R> m,
+                         int rowBeginIdx, int rowEndIdx,
+                         int columnBeginIdx, int columnEndIdx,
+                         MatrixFunction<? super T, ? extends R> function) {
+        for (int rowIdx = rowBeginIdx; rowIdx < rowEndIdx; ++rowIdx) {
+            IndexRow<T> row = rows.get(rowIdx);
+            if (row != null) {
+                for (int columnIdx = columnBeginIdx; columnIdx < columnEndIdx; ++columnIdx) {
+                    IndexCell<T> cell = row.cells.get(columnIdx);
+                    if (cell != null && !cell.isBlank()) {
+                        R value = function.apply(rowIdx, columnIdx, cell.getValue());
+                        m.put(rowIdx - rowBeginIdx, columnIdx - columnBeginIdx, value);
+                    }
+                }
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private MatrixFunction<? super T, ? extends T> passTroughFunction() {
+        return (MatrixFunction<? super T, ? extends T>) PASS_TROUGH_FUNCTION;
     }
 
     private boolean rowsEqual(IndexRow first, IndexRow second) {

@@ -36,7 +36,6 @@ public interface Matrix<T> {
 
     Column<T> insertColumnAfter(Column<T> column);
 
-
     void deleteRow(int row);
 
     void deleteRow(Row<T> row);
@@ -45,17 +44,19 @@ public interface Matrix<T> {
 
     void deleteColumn(Column<T> column);
 
-    Matrix<T> subMatrix(int rowBeginIdx, int rowEndIdx, int columnBeginIdx, int columnEndIdx);
-
     void clear();
 
     void fill(MatrixFunction<? super T, ? extends T> function);
 
     void fillBlanks(MatrixFunction<? super T, ? extends T> function);
 
+    Matrix<T> map();
+
     <R> Matrix<R> map(MatrixFunction<? super T, ? extends R> function);
 
-    Matrix<T> shallowCopy();
+    Matrix<T> map(int rowBeginIdx, int rowEndIdx, int columnBeginIdx, int columnEndIdx);
+
+    <R> Matrix<R> map(int rowBeginIdx, int rowEndIdx, int columnBeginIdx, int columnEndIdx, MatrixFunction<? super T, ? extends R> function);
 
     int getRowSize();
 
