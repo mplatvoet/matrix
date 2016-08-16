@@ -27,37 +27,4 @@ public interface Matrix<T> {
     int getColumnSize();
 
 
-    interface Cell<T> {
-        Matrix<T> getMatrix();
-
-        Row<T> getRow();
-
-        Column<T> getColumn();
-
-        T getValue();
-
-        int getColumnIndex();
-
-        int getRowIndex();
-
-        boolean isBlank();
-    }
-
-    interface Line<T> extends Iterable<T> {
-        Matrix<T> getMatrix();
-
-        T get(int idx);
-
-        Cell<T> getCell(int idx);
-
-        Iterable<Cell<T>> cells();
-    }
-
-    interface Column<T> extends Line<T> {
-        int getColumnIndex();
-    }
-
-    interface Row<T> extends Line<T> {
-        int getRowIndex();
-    }
 }

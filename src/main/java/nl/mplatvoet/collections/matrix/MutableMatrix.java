@@ -63,39 +63,4 @@ public interface MutableMatrix<T> extends Matrix<T> {
 
     <R> MutableMatrix<R> map(int rowBeginIdx, int rowEndIdx, int columnBeginIdx, int columnEndIdx, MatrixFunction<? super T, ? extends R> function);
 
-    interface MutableCell<T> extends Matrix.Cell<T> {
-        MutableMatrix<T> getMatrix();
-
-        MutableRow<T> getRow();
-
-        MutableColumn<T> getColumn();
-
-        void setValue(T value);
-
-        void clear();
-    }
-
-    interface MutableLine<T> extends Line<T> {
-        MutableMatrix<T> getMatrix();
-
-        MutableCell<T> getCell(int idx);
-
-        T put(int idx, T value);
-
-        void clear();
-
-        void fill(MatrixFunction<? super T, ? extends T> function);
-
-        void fillBlanks(MatrixFunction<? super T, ? extends T> function);
-
-        Iterable<MutableCell<T>> mutableCells();
-    }
-
-    interface MutableColumn<T> extends MutableLine<T>, Column<T> {
-
-    }
-
-    interface MutableRow<T> extends MutableLine<T>, Row<T> {
-
-    }
 }

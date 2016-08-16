@@ -46,16 +46,16 @@ public class MatrixExample {
 
 
         System.out.println("==Delete rows - iterator==");
-        for (Iterator<Matrix.Row<String>> iter = subMatrix.rows().iterator(); iter.hasNext(); ) {
-            Matrix.Row<String> row = iter.next();
+        for (Iterator<Row<String>> iter = subMatrix.rows().iterator(); iter.hasNext(); ) {
+            Row<String> row = iter.next();
             if (row.getRowIndex() > 3) iter.remove();
         }
         printMatrix(subMatrix);
         System.out.println();
 
         System.out.println("==Delete columns - iterator==");
-        for (Iterator<Matrix.Column<String>> iter = subMatrix.columns().iterator(); iter.hasNext(); ) {
-            Matrix.Column<String> column = iter.next();
+        for (Iterator<Column<String>> iter = subMatrix.columns().iterator(); iter.hasNext(); ) {
+            Column<String> column = iter.next();
             if (column.getColumnIndex() > 5) iter.remove();
         }
         printMatrix(subMatrix);
@@ -99,7 +99,7 @@ public class MatrixExample {
     }
 
     private static void printMatrix(Matrix<?> matrix) {
-        for (Matrix.Row<?> row : matrix.rows()) {
+        for (Row<?> row : matrix.rows()) {
             for (Object value : row) {
                 System.out.print(value == null ? " " : value);
                 System.out.print(" ");
