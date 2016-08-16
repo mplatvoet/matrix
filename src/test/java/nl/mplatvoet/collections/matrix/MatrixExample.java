@@ -14,13 +14,13 @@ public class MatrixExample {
     };
 
     public static void main(String[] args) throws Exception {
-        Matrix<String> matrix = generateMatrix(10, 20);
+        MutableMatrix<String> matrix = generateMatrix(10, 20);
         System.out.println("==Generated matrix==");
         printMatrix(matrix);
         System.out.println();
 
         System.out.println("==Sub matrix==");
-        Matrix<String> subMatrix = matrix.map(0, 6, 0, 10);
+        MutableMatrix<String> subMatrix = matrix.map(0, 6, 0, 10);
         printMatrix(subMatrix);
         System.out.println();
 
@@ -81,8 +81,8 @@ public class MatrixExample {
         printMatrix(strings);
     }
 
-    private static Matrix<String> generateMatrix(int rows, int columns) {
-        Matrix<String> m = new IndexMatrix<>(rows, columns);
+    private static MutableMatrix<String> generateMatrix(int rows, int columns) {
+        MutableMatrix<String> m = new IndexMatrix<>(rows, columns);
         Random random = new Random();
         for (int row = 0; row < rows; ++row) {
             for (int column = 0; column < columns; ++column) {
@@ -94,7 +94,7 @@ public class MatrixExample {
         return m;
     }
 
-    private static <T> Matrix<T> generateMatrix(int rows, int columns, MatrixFunction<? super T, ? extends T> fn) {
+    private static <T> MutableMatrix<T> generateMatrix(int rows, int columns, MatrixFunction<? super T, ? extends T> fn) {
         return new IndexMatrix<>(rows, columns, fn);
     }
 

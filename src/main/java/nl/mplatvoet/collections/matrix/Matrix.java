@@ -14,42 +14,6 @@ public interface Matrix<T> {
 
     Iterable<Column<T>> columns();
 
-    T put(int row, int column, T value);
-
-    void putAll(Matrix<? extends T> matrix);
-
-    void putAll(Matrix<? extends T> matrix, int rowOffset, int columnOffset);
-
-    Row<T> insertRowBefore(int row);
-
-    Row<T> insertRowAfter(int row);
-
-    Row<T> insertRowBefore(Row<T> row);
-
-    Row<T> insertRowAfter(Row<T> row);
-
-    Column<T> insertColumnBefore(int column);
-
-    Column<T> insertColumnAfter(int column);
-
-    Column<T> insertColumnBefore(Column<T> column);
-
-    Column<T> insertColumnAfter(Column<T> column);
-
-    void deleteRow(int row);
-
-    void deleteRow(Row<T> row);
-
-    void deleteColumn(int column);
-
-    void deleteColumn(Column<T> column);
-
-    void clear();
-
-    void fill(MatrixFunction<? super T, ? extends T> function);
-
-    void fillBlanks(MatrixFunction<? super T, ? extends T> function);
-
     Matrix<T> map();
 
     <R> Matrix<R> map(MatrixFunction<? super T, ? extends R> function);
@@ -72,10 +36,6 @@ public interface Matrix<T> {
 
         T getValue();
 
-        void setValue(T value);
-
-        void clear();
-
         int getColumnIndex();
 
         int getRowIndex();
@@ -89,14 +49,6 @@ public interface Matrix<T> {
         T get(int idx);
 
         Cell<T> getCell(int idx);
-
-        T put(int idx, T value);
-
-        void clear();
-
-        void fill(MatrixFunction<? super T, ? extends T> function);
-
-        void fillBlanks(MatrixFunction<? super T, ? extends T> function);
 
         Iterable<Cell<T>> cells();
     }
