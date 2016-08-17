@@ -1,6 +1,8 @@
 package nl.mplatvoet.collections.matrix;
 
 
+import nl.mplatvoet.collections.matrix.fn.Function;
+
 public interface MutableMatrix<T> extends Matrix<T> {
 
     MutableCell<T> getCell(int row, int column);
@@ -51,16 +53,16 @@ public interface MutableMatrix<T> extends Matrix<T> {
 
     void clear();
 
-    void fill(MatrixFunction<? super T, ? extends T> function);
+    void fill(Function<? super T, ? extends T> function);
 
-    void fillBlanks(MatrixFunction<? super T, ? extends T> function);
+    void fillBlanks(Function<? super T, ? extends T> function);
 
     MutableMatrix<T> map();
 
-    <R> MutableMatrix<R> map(MatrixFunction<? super T, ? extends R> function);
+    <R> MutableMatrix<R> map(Function<? super T, ? extends R> function);
 
     MutableMatrix<T> map(int rowBeginIdx, int rowEndIdx, int columnBeginIdx, int columnEndIdx);
 
-    <R> MutableMatrix<R> map(int rowBeginIdx, int rowEndIdx, int columnBeginIdx, int columnEndIdx, MatrixFunction<? super T, ? extends R> function);
+    <R> MutableMatrix<R> map(int rowBeginIdx, int rowEndIdx, int columnBeginIdx, int columnEndIdx, Function<? super T, ? extends R> function);
 
 }

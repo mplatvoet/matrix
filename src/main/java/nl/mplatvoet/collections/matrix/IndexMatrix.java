@@ -1,10 +1,12 @@
 package nl.mplatvoet.collections.matrix;
 
+import nl.mplatvoet.collections.matrix.fn.Function;
+
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 public class IndexMatrix<T> implements MutableMatrix<T> {
-    private static final MatrixFunction<Object, Object> PASS_TROUGH_FUNCTION = new MatrixFunction<Object, Object>() {
+    private static final Function<Object, Object> PASS_TROUGH_FUNCTION = new Function<Object, Object>() {
         @Override
         public Object apply(int row, int column, Object value) {
             return value;
@@ -30,7 +32,7 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
         this(initialRows, initialColumns, null);
     }
 
-    public IndexMatrix(int initialRows, int initialColumns, MatrixFunction<? super T, ? extends T> function) {
+    public IndexMatrix(int initialRows, int initialColumns, Function<? super T, ? extends T> function) {
         if (initialRows < 0) {
             throw new IllegalArgumentException("initialRows must be >= 0");
         }
@@ -69,7 +71,7 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
     }
 
     @Override
-    public void fillBlanks(MatrixFunction<? super T, ? extends T> function) {
+    public void fillBlanks(Function<? super T, ? extends T> function) {
         if (function == null) {
             throw new IllegalArgumentException("function cannot be null");
         }
@@ -80,7 +82,7 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
     }
 
     @Override
-    public void fill(MatrixFunction<? super T, ? extends T> function) {
+    public void fill(Function<? super T, ? extends T> function) {
         if (function == null) {
             throw new IllegalArgumentException("function cannot be null");
         }
@@ -470,7 +472,7 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
     }
 
     @Override
-    public <R> MutableMatrix<R> map(MatrixFunction<? super T, ? extends R> function) {
+    public <R> MutableMatrix<R> map(Function<? super T, ? extends R> function) {
         if (function == null) {
             throw new IllegalArgumentException("function cannot be null");
         }
@@ -494,7 +496,7 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
     @Override
     public <R> MutableMatrix<R> map(int rowBeginIdx, int rowEndIdx,
                                     int columnBeginIdx, int columnEndIdx,
-                                    MatrixFunction<? super T, ? extends R> function) {
+                                    Function<? super T, ? extends R> function) {
         validateIndices(rowBeginIdx, rowEndIdx, columnBeginIdx, columnEndIdx);
 
         if (function == null) {
@@ -532,7 +534,7 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
     private <R> void map(IndexMatrix<R> m,
                          int rowBeginIdx, int rowEndIdx,
                          int columnBeginIdx, int columnEndIdx,
-                         MatrixFunction<? super T, ? extends R> function) {
+                         Function<? super T, ? extends R> function) {
         for (int rowIdx = rowBeginIdx; rowIdx < rowEndIdx; ++rowIdx) {
             IndexRow<T> row = rows.get(rowIdx);
             if (row != null) {
@@ -548,8 +550,8 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
     }
 
     @SuppressWarnings("unchecked")
-    private MatrixFunction<? super T, ? extends T> passTroughFunction() {
-        return (MatrixFunction<? super T, ? extends T>) PASS_TROUGH_FUNCTION;
+    private Function<? super T, ? extends T> passTroughFunction() {
+        return (Function<? super T, ? extends T>) PASS_TROUGH_FUNCTION;
     }
 
     private boolean rowsEqual(IndexRow first, IndexRow second) {
@@ -668,7 +670,7 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
         }
 
         @Override
-        public void fillBlanks(MatrixFunction<? super T, ? extends T> function) {
+        public void fillBlanks(Function<? super T, ? extends T> function) {
             assertState();
             for (int rowIndex = 0; rowIndex <= matrix.maxRowIndex; ++rowIndex) {
                 MutableCell<T> cell = matrix.getRow(rowIndex).getCell(columnIndex);
@@ -680,7 +682,7 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
         }
 
         @Override
-        public void fill(MatrixFunction<? super T, ? extends T> function) {
+        public void fill(Function<? super T, ? extends T> function) {
             assertState();
             for (int rowIndex = 0; rowIndex <= matrix.maxRowIndex; ++rowIndex) {
                 MutableCell<T> cell = matrix.getRow(rowIndex).getCell(columnIndex);
@@ -802,7 +804,7 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
         }
 
         @Override
-        public void fill(MatrixFunction<? super T, ? extends T> function) {
+        public void fill(Function<? super T, ? extends T> function) {
             assertState();
             for (int columnIndex = 0; columnIndex <= matrix.maxColumnIndex; ++columnIndex) {
                 MutableCell<T> cell = getCell(columnIndex);
@@ -812,7 +814,7 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
         }
 
         @Override
-        public void fillBlanks(MatrixFunction<? super T, ? extends T> function) {
+        public void fillBlanks(Function<? super T, ? extends T> function) {
             assertState();
             for (int columnIndex = 0; columnIndex <= matrix.maxColumnIndex; ++columnIndex) {
                 MutableCell<T> cell = getCell(columnIndex);

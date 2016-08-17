@@ -1,6 +1,8 @@
 package nl.mplatvoet.collections.matrix;
 
 
+import nl.mplatvoet.collections.matrix.fn.Function;
+
 public interface Matrix<T> {
     Cell<T> getCell(int row, int column);
 
@@ -16,11 +18,11 @@ public interface Matrix<T> {
 
     Matrix<T> map();
 
-    <R> Matrix<R> map(MatrixFunction<? super T, ? extends R> function);
+    <R> Matrix<R> map(Function<? super T, ? extends R> function);
 
     Matrix<T> map(int rowBeginIdx, int rowEndIdx, int columnBeginIdx, int columnEndIdx);
 
-    <R> Matrix<R> map(int rowBeginIdx, int rowEndIdx, int columnBeginIdx, int columnEndIdx, MatrixFunction<? super T, ? extends R> function);
+    <R> Matrix<R> map(int rowBeginIdx, int rowEndIdx, int columnBeginIdx, int columnEndIdx, Function<? super T, ? extends R> function);
 
     int getRowSize();
 

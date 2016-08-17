@@ -1,12 +1,14 @@
 package nl.mplatvoet.collections.matrix;
 
 
+import nl.mplatvoet.collections.matrix.fn.Function;
+
 import java.util.Iterator;
 import java.util.Random;
 
 public class MatrixExample {
 
-    public static final MatrixFunction<String, String> PLUS_FACTORY = new MatrixFunction<String, String>() {
+    public static final Function<String, String> PLUS_FACTORY = new Function<String, String>() {
         @Override
         public String apply(int row, int column, String value) {
             return "+";
@@ -62,7 +64,7 @@ public class MatrixExample {
         System.out.println();
 
         System.out.println("==Fill function==");
-        Matrix<Integer> numbers = generateMatrix(5, 5, new MatrixFunction<Integer, Integer>() {
+        Matrix<Integer> numbers = generateMatrix(5, 5, new Function<Integer, Integer>() {
             @Override
             public Integer apply(int row, int column, Integer value) {
                 return ++row + column;
@@ -72,7 +74,7 @@ public class MatrixExample {
         System.out.println();
 
         System.out.println("==Map function==");
-        Matrix<String> strings = numbers.map(new MatrixFunction<Integer, String>() {
+        Matrix<String> strings = numbers.map(new Function<Integer, String>() {
             @Override
             public String apply(int row, int column, Integer value) {
                 return "<" + value + ">";
@@ -94,7 +96,7 @@ public class MatrixExample {
         return m;
     }
 
-    private static <T> MutableMatrix<T> generateMatrix(int rows, int columns, MatrixFunction<? super T, ? extends T> fn) {
+    private static <T> MutableMatrix<T> generateMatrix(int rows, int columns, Function<? super T, ? extends T> fn) {
         return new IndexMatrix<>(rows, columns, fn);
     }
 
