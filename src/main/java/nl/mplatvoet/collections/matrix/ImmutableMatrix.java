@@ -1,6 +1,8 @@
 package nl.mplatvoet.collections.matrix;
 
+import nl.mplatvoet.collections.matrix.args.Arguments;
 import nl.mplatvoet.collections.matrix.fn.Function;
+import nl.mplatvoet.collections.matrix.fn.Functions;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -13,42 +15,53 @@ public class ImmutableMatrix<T> implements Matrix<T> {
     private final Iterable<Row<T>> rowsIterable;
     private final Iterable<Column<T>> columnsIterable;
 
-    private ImmutableMatrix(Matrix<? extends T> source) {
-        if (source == null) {
-            throw new IllegalArgumentException("source can not be null");
-        }
+    private <S> ImmutableMatrix(Matrix<S> source, Function<? super S, ? extends T> transform) {
+        Arguments.checkArgument(source == null, "source cannot be null");
+
         int rowSize = source.getRowSize();
         int columnSize = source.getColumnSize();
 
         cells = new AbstractCell[rowSize][columnSize];
+        fillCells(source, transform, rowSize, columnSize);
+
+
         rows = new ImmutableRow[rowSize];
         columns = new ImmutableColumn[columnSize];
-
         for (int i = 0; i < rowSize; ++i) rows[i] = new ImmutableRow<>(this, i);
         for (int i = 0; i < columnSize; ++i) columns[i] = new ImmutableColumn<>(this, i);
-
-        //don't use iterator, I want to match the previous set size
-        for (int r = 0; r < rowSize; ++r) {
-            Row<? extends T> row = source.getRow(r);
-            for (int c = 0; c < columnSize; ++c) {
-                Cell<? extends T> cell = row.getCell(c);
-                cells[r][c] = cell.isBlank() ? new BlankCell<>(this, r, c) : new ValueCell<>(this, cell.getValue(), r, c);
-            }
-        }
 
         rowsIterable = new ArrayIterable<>(rows);
         columnsIterable = new ArrayIterable<>(columns);
     }
 
-    @SuppressWarnings("unchecked")
-    public static <T> Matrix<T> from(Matrix<? extends T> matrix) {
-        if (matrix == null) {
-            throw new IllegalArgumentException("matrix can not be null");
+    private <S> void fillCells(Matrix<S> source, Function<? super S, ? extends T> transform, int rowSize, int columnSize) {
+        //don't use iterator, I want to match the previous set size
+        for (int r = 0; r < rowSize; ++r) {
+            Row<S> row = source.getRow(r);
+            for (int c = 0; c < columnSize; ++c) {
+                Cell<S> cell = row.getCell(c);
+                if (cell.isBlank()) {
+                    cells[r][c] = new BlankCell<>(this, r, c);
+                } else {
+                    T value = transform.apply(r, c, cell.getValue());
+                    cells[r][c] = new ValueCell<>(this, value, r, c);
+                }
+            }
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> Matrix<T> copyOf(Matrix<? extends T> matrix) {
         if (matrix instanceof ImmutableMatrix) {
             return (Matrix<T>) matrix;
         }
-        return new ImmutableMatrix<T>(matrix);
+
+        return copyOf(matrix, Functions.<T>passTrough());
+    }
+
+    public static <T, R> Matrix<R> copyOf(Matrix<? extends T> matrix, Function<? super T, ? extends R> transform) {
+        Arguments.checkArgument(matrix == null, "matrix cannot be null");
+        return new ImmutableMatrix<>(matrix, transform);
     }
 
     @SuppressWarnings("unchecked")
@@ -91,17 +104,17 @@ public class ImmutableMatrix<T> implements Matrix<T> {
 
     @Override
     public <R> Matrix<R> map(Function<? super T, ? extends R> function) {
-        return null;
+        return copyOf(this, function);
     }
 
     @Override
     public Matrix<T> map(int rowBeginIdx, int rowEndIdx, int columnBeginIdx, int columnEndIdx) {
-        return null;
+        throw new UnsupportedOperationException("not implemented yet");
     }
 
     @Override
     public <R> Matrix<R> map(int rowBeginIdx, int rowEndIdx, int columnBeginIdx, int columnEndIdx, Function<? super T, ? extends R> function) {
-        return null;
+        throw new UnsupportedOperationException("not implemented yet");
     }
 
     @Override
@@ -120,12 +133,11 @@ public class ImmutableMatrix<T> implements Matrix<T> {
         private final int row;
         private final int column;
 
-        protected AbstractCell(ImmutableMatrix<T> matrix, int row, int column) {
+        AbstractCell(ImmutableMatrix<T> matrix, int row, int column) {
             this.matrix = matrix;
             this.row = row;
             this.column = column;
         }
-
 
         @Override
         public Matrix<T> getMatrix() {
@@ -154,7 +166,7 @@ public class ImmutableMatrix<T> implements Matrix<T> {
     }
 
     private static final class BlankCell<T> extends AbstractCell<T> {
-        protected BlankCell(ImmutableMatrix<T> matrix, int row, int column) {
+        BlankCell(ImmutableMatrix<T> matrix, int row, int column) {
             super(matrix, row, column);
         }
 
@@ -172,7 +184,7 @@ public class ImmutableMatrix<T> implements Matrix<T> {
     private static final class ValueCell<T> extends AbstractCell<T> {
         private final T value;
 
-        protected ValueCell(ImmutableMatrix<T> matrix, T value, int row, int column) {
+        ValueCell(ImmutableMatrix<T> matrix, T value, int row, int column) {
             super(matrix, row, column);
             this.value = value;
         }
@@ -192,7 +204,7 @@ public class ImmutableMatrix<T> implements Matrix<T> {
     private static abstract class AbstractLine<T> implements Line<T> {
         protected final ImmutableMatrix<T> matrix;
 
-        protected AbstractLine(ImmutableMatrix<T> matrix) {
+        AbstractLine(ImmutableMatrix<T> matrix) {
             this.matrix = matrix;
         }
 
@@ -209,10 +221,12 @@ public class ImmutableMatrix<T> implements Matrix<T> {
 
     private static class ImmutableRow<T> extends AbstractLine<T> implements Row<T> {
         private final int row;
+        private ArrayIterable<Cell<T>> cells;
 
-        protected ImmutableRow(ImmutableMatrix<T> matrix, int row) {
+        ImmutableRow(ImmutableMatrix<T> matrix, int row) {
             super(matrix);
             this.row = row;
+            this.cells = new ArrayIterable<>(matrix.cells[row]);
         }
 
         @Override
@@ -227,21 +241,23 @@ public class ImmutableMatrix<T> implements Matrix<T> {
 
         @Override
         public Iterable<Cell<T>> cells() {
-            return null;
+            return cells;
         }
 
         @Override
         public Iterator<T> iterator() {
-            return null;
+            return new CellValueIterator<>(cells.iterator());
         }
     }
 
     private static class ImmutableColumn<T> extends AbstractLine<T> implements Column<T> {
         private final int column;
+        private final ColumnCellIterable<T> cellIterable;
 
-        protected ImmutableColumn(ImmutableMatrix<T> matrix, int column) {
+        ImmutableColumn(ImmutableMatrix<T> matrix, int column) {
             super(matrix);
             this.column = column;
+            cellIterable = new ColumnCellIterable<>(matrix.cells, column);
         }
 
         @Override
@@ -256,14 +272,59 @@ public class ImmutableMatrix<T> implements Matrix<T> {
 
         @Override
         public Iterable<Cell<T>> cells() {
-            //TODO
-            return null;
+            return cellIterable;
         }
 
         @Override
         public Iterator<T> iterator() {
-            //TODO
-            return null;
+            return new CellValueIterator<>(cellIterable.iterator());
+        }
+    }
+
+    private static final class ColumnCellIterable<T> implements Iterable<Cell<T>> {
+        private final Cell[][] cells;
+        private final int column;
+
+        private ColumnCellIterable(Cell[][] cells, int column) {
+            this.cells = cells;
+            this.column = column;
+        }
+
+        @Override
+        public Iterator<Cell<T>> iterator() {
+            return new ColumnCellIterator<>(cells, column);
+        }
+    }
+
+    private static final class ColumnCellIterator<T> implements Iterator<Cell<T>> {
+        private final Cell[][] cells;
+        private final int column;
+        private int idx = -1;
+
+        private ColumnCellIterator(Cell[][] cells, int column) {
+            this.cells = cells;
+            this.column = column;
+        }
+
+
+        @Override
+        public boolean hasNext() {
+            return idx + 1 < cells.length;
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public Cell<T> next() {
+            if (!hasNext()) {
+                throw new NoSuchElementException();
+            }
+            return (Cell<T>) cells[idx][column];
+        }
+
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
         }
     }
 
@@ -300,6 +361,29 @@ public class ImmutableMatrix<T> implements Matrix<T> {
                 throw new NoSuchElementException();
             }
             return (T) array[++index];
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    private static final class CellValueIterator<T> implements Iterator<T> {
+        private final Iterator<Cell<T>> cellIterator;
+
+        private CellValueIterator(Iterator<Cell<T>> cellIterator) {
+            this.cellIterator = cellIterator;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return cellIterator.hasNext();
+        }
+
+        @Override
+        public T next() {
+            return cellIterator.next().getValue();
         }
 
         @Override

@@ -1,18 +1,12 @@
 package nl.mplatvoet.collections.matrix;
 
 import nl.mplatvoet.collections.matrix.fn.Function;
+import nl.mplatvoet.collections.matrix.fn.Functions;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 public class IndexMatrix<T> implements MutableMatrix<T> {
-    private static final Function<Object, Object> PASS_TROUGH_FUNCTION = new Function<Object, Object>() {
-        @Override
-        public Object apply(int row, int column, Object value) {
-            return value;
-        }
-    };
-
     private final IndexMap<IndexRow<T>> rows;
     private final IndexMap<IndexColumn<T>> columns;
 
@@ -467,7 +461,7 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
     @Override
     public MutableMatrix<T> map() {
         IndexMatrix<T> matrix = new IndexMatrix<>(getRowSize(), getColumnSize());
-        map(matrix, 0, getRowSize(), 0, getColumnSize(), passTroughFunction());
+        map(matrix, 0, getRowSize(), 0, getColumnSize(), Functions.<T>passTrough());
         return matrix;
     }
 
@@ -489,7 +483,7 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
 
         IndexMatrix<T> result = new IndexMatrix<>(rowEndIdx - rowBeginIdx, columnEndIdx - columnBeginIdx);
 
-        map(result, rowBeginIdx, rowEndIdx, columnBeginIdx, columnEndIdx, passTroughFunction());
+        map(result, rowBeginIdx, rowEndIdx, columnBeginIdx, columnEndIdx, Functions.<T>passTrough());
         return result;
     }
 
@@ -547,11 +541,6 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
                 }
             }
         }
-    }
-
-    @SuppressWarnings("unchecked")
-    private Function<? super T, ? extends T> passTroughFunction() {
-        return (Function<? super T, ? extends T>) PASS_TROUGH_FUNCTION;
     }
 
     private boolean rowsEqual(IndexRow first, IndexRow second) {
