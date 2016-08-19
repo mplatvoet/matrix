@@ -2,16 +2,17 @@ package nl.mplatvoet.collections.matrix;
 
 
 import nl.mplatvoet.collections.matrix.fn.Function;
+import nl.mplatvoet.collections.matrix.range.Range;
 
 import java.util.Iterator;
-import java.util.Random;
 
-import static nl.mplatvoet.collections.matrix.ExampleUtil.generateMatrix;
+import static nl.mplatvoet.collections.matrix.ExampleUtil.randomMatrix;
 import static nl.mplatvoet.collections.matrix.ExampleUtil.printMatrix;
+import static nl.mplatvoet.collections.matrix.Matrices.*;
 
 public class MatrixExample {
 
-    public static final Function<String, String> PLUS_FACTORY = new Function<String, String>() {
+    private static final Function<String, String> PLUS_FACTORY = new Function<String, String>() {
         @Override
         public String apply(int row, int column, String value) {
             return "+";
@@ -19,18 +20,18 @@ public class MatrixExample {
     };
 
     public static void main(String[] args) throws Exception {
-        MutableMatrix<String> matrix = generateMatrix(10, 20);
+        Matrix<String> matrix = randomMatrix(10, 20);
         System.out.println("==Generated matrix==");
         printMatrix(matrix);
         System.out.println();
 
         System.out.println("==Sub matrix==");
-        MutableMatrix<String> subMatrix = matrix.map(0, 6, 0, 10);
+        MutableMatrix<String> subMatrix = mutableCopyOf(matrix, Range.of(0, 6, 0, 10));
         printMatrix(subMatrix);
         System.out.println();
 
         System.out.println("==Insert row==");
-        subMatrix.insertRowBefore(3).fillBlanks(PLUS_FACTORY);
+        subMatrix.insertRow(3).fillBlanks(PLUS_FACTORY);
         printMatrix(subMatrix);
         System.out.println();
 
@@ -40,7 +41,7 @@ public class MatrixExample {
         System.out.println();
 
         System.out.println("==Insert column==");
-        subMatrix.insertColumnBefore(5).fillBlanks(PLUS_FACTORY);
+        subMatrix.insertColumn(5).fillBlanks(PLUS_FACTORY);
         printMatrix(subMatrix);
         System.out.println();
 
@@ -67,7 +68,7 @@ public class MatrixExample {
         System.out.println();
 
         System.out.println("==Fill function==");
-        Matrix<Integer> numbers = generateMatrix(5, 5, new Function<Integer, Integer>() {
+        Matrix<Integer> numbers = Matrices.of(5, 5, new Function<Integer, Integer>() {
             @Override
             public Integer apply(int row, int column, Integer value) {
                 return ++row + column;

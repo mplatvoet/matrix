@@ -3,6 +3,7 @@ package nl.mplatvoet.collections.matrix;
 import nl.mplatvoet.collections.matrix.args.Arguments;
 import nl.mplatvoet.collections.matrix.fn.Function;
 import nl.mplatvoet.collections.matrix.fn.Functions;
+import nl.mplatvoet.collections.matrix.range.Range;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -15,14 +16,17 @@ public class ImmutableMatrix<T> implements Matrix<T> {
     private final Iterable<Row<T>> rowsIterable;
     private final Iterable<Column<T>> columnsIterable;
 
-    private <S> ImmutableMatrix(Matrix<S> source, Function<? super S, ? extends T> transform) {
-        Arguments.checkArgument(source == null, "source cannot be null");
+    private <S> ImmutableMatrix(Matrix<S> matrix, Range range, Function<? super S, ? extends T> transform) {
+        Arguments.checkArgument(matrix == null, "matrix cannot be null");
+        Arguments.checkArgument(range == null, "range cannot be null");
+        Arguments.checkArgument(transform == null, "transform cannot be null");
+        Arguments.checkArgument(!range.fits(matrix), "%s does not fit in provided %s", range, matrix);
 
-        int rowSize = source.getRowSize();
-        int columnSize = source.getColumnSize();
+        int rowSize = range.getRowSize();
+        int columnSize = range.getColumnSize();
 
         cells = new AbstractCell[rowSize][columnSize];
-        fillCells(source, transform, rowSize, columnSize);
+        fillCells(matrix, range, transform);
 
 
         rows = new ImmutableRow[rowSize];
@@ -34,12 +38,63 @@ public class ImmutableMatrix<T> implements Matrix<T> {
         columnsIterable = new ArrayIterable<>(columns);
     }
 
-    private <S> void fillCells(Matrix<S> source, Function<? super S, ? extends T> transform, int rowSize, int columnSize) {
+    private ImmutableMatrix(int rows, int columns, Function<?, ? extends T> fill) {
+        Arguments.checkArgument(rows < 0, "row must be >= 0 but was %s", rows);
+        Arguments.checkArgument(columns < 0, "row must be >= 0 but was %s", columns);
+        Arguments.checkArgument(fill == null, "fill function cannot be null");
+
+
+        cells = new AbstractCell[rows][columns];
+        fillCells(fill);
+
+
+        this.rows = new ImmutableRow[rows];
+        this.columns = new ImmutableColumn[columns];
+        for (int i = 0; i < rows; ++i) this.rows[i] = new ImmutableRow<>(this, i);
+        for (int i = 0; i < columns; ++i) this.columns[i] = new ImmutableColumn<>(this, i);
+
+        rowsIterable = new ArrayIterable<>(this.rows);
+        columnsIterable = new ArrayIterable<>(this.columns);
+    }
+
+    public static <T> Matrix<T> of(int rows, int columns, Function<?, ? extends T> fill) {
+        return new ImmutableMatrix(rows, columns, fill);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> Matrix<T> copyOf(Matrix<? extends T> matrix) {
+        if (matrix instanceof ImmutableMatrix) {
+            return (Matrix<T>) matrix;
+        }
+
+        return copyOf(matrix, Range.of(matrix), Functions.<T>passTrough());
+    }
+
+    public static <T> Matrix<T> copyOf(Matrix<? extends T> matrix, Range range) {
+        if (range != null && range.matches(matrix)) {
+            return copyOf(matrix);
+        }
+        return copyOf(matrix, range, Functions.<T>passTrough());
+    }
+
+    public static <T, R> Matrix<R> copyOf(Matrix<? extends T> matrix, Function<? super T, ? extends R> transform) {
+        return copyOf(matrix, Range.of(matrix), transform);
+    }
+
+    public static <T, R> Matrix<R> copyOf(Matrix<? extends T> matrix, Range range, Function<? super T, ? extends R> transform) {
+        //TODO check if range is empty and return a special empty matrix
+
+        return new ImmutableMatrix<>(matrix, range, transform);
+    }
+
+    private <S> void fillCells(Matrix<S> source, Range range, Function<? super S, ? extends T> transform) {
+        final int rOffset = range.getRowBeginIndex();
+        final int cOffset = range.getColumnBeginIndex();
         //don't use iterator, I want to match the previous set size
-        for (int r = 0; r < rowSize; ++r) {
-            Row<S> row = source.getRow(r);
-            for (int c = 0; c < columnSize; ++c) {
-                Cell<S> cell = row.getCell(c);
+        for (int r = 0; r < range.getRowSize(); ++r) {
+            Row<S> row = source.getRow(r + rOffset);
+            for (int c = 0; c < range.getColumnSize(); ++c) {
+                Cell<S> cell = row.getCell(c + cOffset);
                 if (cell.isBlank()) {
                     cells[r][c] = new BlankCell<>(this, r, c);
                 } else {
@@ -50,18 +105,13 @@ public class ImmutableMatrix<T> implements Matrix<T> {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    public static <T> Matrix<T> copyOf(Matrix<? extends T> matrix) {
-        if (matrix instanceof ImmutableMatrix) {
-            return (Matrix<T>) matrix;
+    private <S> void fillCells(Function<?, ? extends T> transform) {
+        for (int r = 0; r < cells.length; ++r) {
+            for (int c = 0; c < cells[r].length; ++c) {
+                T value = transform.apply(r, c, null);
+                cells[r][c] = new ValueCell<>(this, value, r, c);
+            }
         }
-
-        return copyOf(matrix, Functions.<T>passTrough());
-    }
-
-    public static <T, R> Matrix<R> copyOf(Matrix<? extends T> matrix, Function<? super T, ? extends R> transform) {
-        Arguments.checkArgument(matrix == null, "matrix cannot be null");
-        return new ImmutableMatrix<>(matrix, transform);
     }
 
     @SuppressWarnings("unchecked")
@@ -108,13 +158,13 @@ public class ImmutableMatrix<T> implements Matrix<T> {
     }
 
     @Override
-    public Matrix<T> map(int rowBeginIdx, int rowEndIdx, int columnBeginIdx, int columnEndIdx) {
-        throw new UnsupportedOperationException("not implemented yet");
+    public Matrix<T> map(Range range) {
+        return copyOf(this, range);
     }
 
     @Override
-    public <R> Matrix<R> map(int rowBeginIdx, int rowEndIdx, int columnBeginIdx, int columnEndIdx, Function<? super T, ? extends R> function) {
-        throw new UnsupportedOperationException("not implemented yet");
+    public <R> Matrix<R> map(Range range, Function<? super T, ? extends R> function) {
+        return copyOf(this, range, function);
     }
 
     @Override
@@ -125,6 +175,21 @@ public class ImmutableMatrix<T> implements Matrix<T> {
     @Override
     public int getColumnSize() {
         return columns.length;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof Matrix && Matrices.equals(this, (Matrix<?>) obj);
+    }
+
+    @Override
+    public int hashCode() {
+        return Matrices.hashCode(this);
+    }
+
+    @Override
+    public String toString() {
+        return Matrices.toString(this);
     }
 
 

@@ -2,6 +2,7 @@ package nl.mplatvoet.collections.matrix;
 
 
 import nl.mplatvoet.collections.matrix.fn.Function;
+import nl.mplatvoet.collections.matrix.range.Range;
 
 public interface Matrix<T> {
     Cell<T> getCell(int row, int column);
@@ -20,13 +21,11 @@ public interface Matrix<T> {
 
     <R> Matrix<R> map(Function<? super T, ? extends R> function);
 
-    Matrix<T> map(int rowBeginIdx, int rowEndIdx, int columnBeginIdx, int columnEndIdx);
+    Matrix<T> map(Range range);
 
-    <R> Matrix<R> map(int rowBeginIdx, int rowEndIdx, int columnBeginIdx, int columnEndIdx, Function<? super T, ? extends R> function);
+    <R> Matrix<R> map(Range range, Function<? super T, ? extends R> function);
 
     int getRowSize();
 
     int getColumnSize();
-
-
 }

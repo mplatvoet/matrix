@@ -2,6 +2,7 @@ package nl.mplatvoet.collections.matrix;
 
 
 import nl.mplatvoet.collections.matrix.fn.Function;
+import nl.mplatvoet.collections.matrix.range.Range;
 
 public interface MutableMatrix<T> extends Matrix<T> {
 
@@ -27,21 +28,13 @@ public interface MutableMatrix<T> extends Matrix<T> {
 
     void putAll(Matrix<? extends T> matrix, int rowOffset, int columnOffset);
 
-    MutableRow<T> insertRowBefore(int row);
+    MutableRow<T> insertRow(int row);
 
-    MutableRow<T> insertRowAfter(int row);
+    MutableRow<T> insertRow(Row<T> row);
 
-    MutableRow<T> insertRowBefore(Row<T> row);
+    MutableColumn<T> insertColumn(int column);
 
-    MutableRow<T> insertRowAfter(Row<T> row);
-
-    MutableColumn<T> insertColumnBefore(int column);
-
-    MutableColumn<T> insertColumnAfter(int column);
-
-    MutableColumn<T> insertColumnBefore(Column<T> column);
-
-    MutableColumn<T> insertColumnAfter(Column<T> column);
+    MutableColumn<T> insertColumn(Column<T> column);
 
     void deleteRow(int row);
 
@@ -57,12 +50,13 @@ public interface MutableMatrix<T> extends Matrix<T> {
 
     void fillBlanks(Function<? super T, ? extends T> function);
 
-    MutableMatrix<T> map();
 
-    <R> MutableMatrix<R> map(Function<? super T, ? extends R> function);
+    MutableMatrix<T> mutableMap();
 
-    MutableMatrix<T> map(int rowBeginIdx, int rowEndIdx, int columnBeginIdx, int columnEndIdx);
+    <R> MutableMatrix<R> mutableMap(Function<? super T, ? extends R> function);
 
-    <R> MutableMatrix<R> map(int rowBeginIdx, int rowEndIdx, int columnBeginIdx, int columnEndIdx, Function<? super T, ? extends R> function);
+    MutableMatrix<T> mutableMap(Range range);
+
+    <R> MutableMatrix<R> mutableMap(Range range, Function<? super T, ? extends R> function);
 
 }

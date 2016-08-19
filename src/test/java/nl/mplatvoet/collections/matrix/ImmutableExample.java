@@ -4,7 +4,7 @@ import nl.mplatvoet.collections.matrix.fn.Function;
 
 public class ImmutableExample {
     public static void main(String[] args) {
-        MutableMatrix<String> matrix = ExampleUtil.generateMatrix(25, 50);
+        MutableMatrix<String> matrix = Matrices.mutableOf(25, 50);
 
         Matrix<String> copy = ImmutableMatrix.copyOf(matrix, new Function<String, String>() {
             @Override
