@@ -20,7 +20,7 @@ public final class Matrices {
         return IndexMatrix.of(rows, columns);
     }
 
-    public static <T> MutableMatrix<T> mutableOf(int rows, int columns, Function<?, ? extends T> fill) {
+    public static <T> MutableMatrix<T> mutableOf(int rows, int columns, Function<?, T> fill) {
         return IndexMatrix.of(rows, columns, fill);
     }
 
@@ -37,11 +37,11 @@ public final class Matrices {
         return ImmutableMatrix.copyOf(matrix, range);
     }
 
-    public static <T, R> Matrix<R> copyOf(Matrix<? extends T> matrix, Function<? super T, ? extends R> transform) {
+    public static <T, R> Matrix<R> copyOf(Matrix<? extends T> matrix, Function<? super T,  R> transform) {
         return ImmutableMatrix.copyOf(matrix, transform);
     }
 
-    public static <T, R> Matrix<R> copyOf(Matrix<? extends T> matrix, Range range, Function<? super T, ? extends R> transform) {
+    public static <T, R> Matrix<R> copyOf(Matrix<? extends T> matrix, Range range, Function<? super T,  R> transform) {
         return ImmutableMatrix.copyOf(matrix, range, transform);
     }
 
@@ -53,11 +53,11 @@ public final class Matrices {
         return IndexMatrix.copyOf(matrix, range);
     }
 
-    public static <T, R> MutableMatrix<R> mutableCopyOf(Matrix<? extends T> matrix, Function<? super T, ? extends R> transform) {
+    public static <T, R> MutableMatrix<R> mutableCopyOf(Matrix<? extends T> matrix, Function<? super T,  R> transform) {
         return IndexMatrix.copyOf(matrix, transform);
     }
 
-    public static <T, R> MutableMatrix<R> mutableCopyOf(Matrix<? extends T> matrix, Range range, Function<? super T, ? extends R> transform) {
+    public static <T, R> MutableMatrix<R> mutableCopyOf(Matrix<? extends T> matrix, Range range, Function<? super T,  R> transform) {
         return IndexMatrix.copyOf(matrix, range, transform);
     }
 

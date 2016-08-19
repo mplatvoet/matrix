@@ -3,6 +3,7 @@ package nl.mplatvoet.collections.matrix;
 import nl.mplatvoet.collections.matrix.args.Arguments;
 import nl.mplatvoet.collections.matrix.fn.Function;
 import nl.mplatvoet.collections.matrix.fn.Functions;
+import nl.mplatvoet.collections.matrix.fn.Result;
 import nl.mplatvoet.collections.matrix.range.Range;
 
 import java.util.Iterator;
@@ -16,7 +17,7 @@ public class ImmutableMatrix<T> implements Matrix<T> {
     private final Iterable<Row<T>> rowsIterable;
     private final Iterable<Column<T>> columnsIterable;
 
-    private <S> ImmutableMatrix(Matrix<S> matrix, Range range, Function<? super S, ? extends T> transform) {
+    private <S> ImmutableMatrix(Matrix<S> matrix, Range range, Function<? super S, T> transform) {
         Arguments.checkArgument(matrix == null, "matrix cannot be null");
         Arguments.checkArgument(range == null, "range cannot be null");
         Arguments.checkArgument(transform == null, "transform cannot be null");
@@ -38,7 +39,7 @@ public class ImmutableMatrix<T> implements Matrix<T> {
         columnsIterable = new ArrayIterable<>(columns);
     }
 
-    private ImmutableMatrix(int rows, int columns, Function<?, ? extends T> fill) {
+    private ImmutableMatrix(int rows, int columns, Function<?,  T> fill) {
         Arguments.checkArgument(rows < 0, "row must be >= 0 but was %s", rows);
         Arguments.checkArgument(columns < 0, "row must be >= 0 but was %s", columns);
         Arguments.checkArgument(fill == null, "fill function cannot be null");
@@ -77,39 +78,52 @@ public class ImmutableMatrix<T> implements Matrix<T> {
         return copyOf(matrix, range, Functions.<T>passTrough());
     }
 
-    public static <T, R> Matrix<R> copyOf(Matrix<? extends T> matrix, Function<? super T, ? extends R> transform) {
+    public static <T, R> Matrix<R> copyOf(Matrix<? extends T> matrix, Function<? super T,  R> transform) {
         return copyOf(matrix, Range.of(matrix), transform);
     }
 
-    public static <T, R> Matrix<R> copyOf(Matrix<? extends T> matrix, Range range, Function<? super T, ? extends R> transform) {
+    public static <T, R> Matrix<R> copyOf(Matrix<? extends T> matrix, Range range, Function<? super T,  R> transform) {
         //TODO check if range is empty and return a special empty matrix
 
         return new ImmutableMatrix<>(matrix, range, transform);
     }
 
-    private <S> void fillCells(Matrix<S> source, Range range, Function<? super S, ? extends T> transform) {
+    private <S> void fillCells(Matrix<S> source, Range range, Function<? super S, T> transform) {
         final int rOffset = range.getRowBeginIndex();
         final int cOffset = range.getColumnBeginIndex();
         //don't use iterator, I want to match the previous set size
+        Result<T> result = new Result<>();
         for (int r = 0; r < range.getRowSize(); ++r) {
             Row<S> row = source.getRow(r + rOffset);
             for (int c = 0; c < range.getColumnSize(); ++c) {
                 Cell<S> cell = row.getCell(c + cOffset);
                 if (cell.isBlank()) {
+                    //TODO maybe do something about blank cells
                     cells[r][c] = new BlankCell<>(this, r, c);
                 } else {
-                    T value = transform.apply(r, c, cell.getValue());
-                    cells[r][c] = new ValueCell<>(this, value, r, c);
+                    transform.apply(r, c, cell.getValue(), result);
+                    if (result.isBlank()) {
+                        cells[r][c] = new BlankCell<>(this, r, c);
+                    } else {
+                        cells[r][c] = new ValueCell<>(this, result.getValue(), r, c);
+                        result.clear();
+                    }
                 }
             }
         }
     }
 
-    private void fillCells(Function<?, ? extends T> transform) {
+    private void fillCells(Function<?, T> transform) {
+        Result<T> result = new Result<>();
         for (int r = 0; r < cells.length; ++r) {
             for (int c = 0; c < cells[r].length; ++c) {
-                T value = transform.apply(r, c, null);
-                cells[r][c] = new ValueCell<>(this, value, r, c);
+                transform.apply(r, c, null, result);
+                if (result.isBlank()) {
+                    cells[r][c] = new BlankCell<>(this, r, c);
+                } else {
+                    cells[r][c] = new ValueCell<>(this, result.getValue(), r, c);
+                    result.clear();
+                }
             }
         }
     }
@@ -153,7 +167,7 @@ public class ImmutableMatrix<T> implements Matrix<T> {
     }
 
     @Override
-    public <R> Matrix<R> map(Function<? super T, ? extends R> function) {
+    public <R> Matrix<R> map(Function<? super T, R> function) {
         return copyOf(this, function);
     }
 
@@ -163,7 +177,7 @@ public class ImmutableMatrix<T> implements Matrix<T> {
     }
 
     @Override
-    public <R> Matrix<R> map(Range range, Function<? super T, ? extends R> function) {
+    public <R> Matrix<R> map(Range range, Function<? super T,  R> function) {
         return copyOf(this, range, function);
     }
 

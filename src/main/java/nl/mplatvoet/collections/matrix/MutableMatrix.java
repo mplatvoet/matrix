@@ -41,7 +41,7 @@ public interface MutableMatrix<T> extends Matrix<T> {
 
     void clear();
 
-    void fill(Function<? super T, ? extends T> function);
+    void fill(Function<? super T, T> function);
 
-    void fillBlanks(Function<? super T, ? extends T> function);
+    void fillBlanks(Function<? super T,  T> function);
 }

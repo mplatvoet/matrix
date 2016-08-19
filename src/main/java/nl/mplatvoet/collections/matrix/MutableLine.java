@@ -11,9 +11,9 @@ public interface MutableLine<T> extends Line<T> {
 
     void clear();
 
-    void fill(Function<? super T, ? extends T> function);
+    void fill(Function<? super T, T> function);
 
-    void fillBlanks(Function<? super T, ? extends T> function);
+    void fillBlanks(Function<? super T, T> function);
 
     Iterable<MutableCell<T>> mutableCells();
 }

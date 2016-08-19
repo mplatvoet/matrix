@@ -19,11 +19,11 @@ public interface Matrix<T> {
 
     Matrix<T> map();
 
-    <R> Matrix<R> map(Function<? super T, ? extends R> function);
+    <R> Matrix<R> map(Function<? super T, R> function);
 
     Matrix<T> map(Range range);
 
-    <R> Matrix<R> map(Range range, Function<? super T, ? extends R> function);
+    <R> Matrix<R> map(Range range, Function<? super T, R> function);
 
     int getRowSize();
 

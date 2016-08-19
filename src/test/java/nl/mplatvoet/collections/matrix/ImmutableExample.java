@@ -1,6 +1,7 @@
 package nl.mplatvoet.collections.matrix;
 
 import nl.mplatvoet.collections.matrix.fn.Function;
+import nl.mplatvoet.collections.matrix.fn.Result;
 
 import static nl.mplatvoet.collections.matrix.ExampleUtil.randomMatrix;
 
@@ -9,9 +10,12 @@ public class ImmutableExample {
         Matrix<String> matrix = randomMatrix(25, 50);
 
         Matrix<String> copy = matrix.map(new Function<String, String>() {
+
             @Override
-            public String apply(int row, int column, String value) {
-                return value == null ? null : "0";
+            public void apply(int row, int column, String value, Result<String> result) {
+                if(value != null) {
+                    result.setValue("0");
+                }
             }
         });
 

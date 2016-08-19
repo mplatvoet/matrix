@@ -2,20 +2,21 @@ package nl.mplatvoet.collections.matrix;
 
 
 import nl.mplatvoet.collections.matrix.fn.Function;
+import nl.mplatvoet.collections.matrix.fn.Result;
 import nl.mplatvoet.collections.matrix.range.Range;
 
 import java.util.Iterator;
 
-import static nl.mplatvoet.collections.matrix.ExampleUtil.randomMatrix;
 import static nl.mplatvoet.collections.matrix.ExampleUtil.printMatrix;
-import static nl.mplatvoet.collections.matrix.Matrices.*;
+import static nl.mplatvoet.collections.matrix.ExampleUtil.randomMatrix;
+import static nl.mplatvoet.collections.matrix.Matrices.mutableCopyOf;
 
 public class MatrixExample {
 
     private static final Function<String, String> PLUS_FACTORY = new Function<String, String>() {
         @Override
-        public String apply(int row, int column, String value) {
-            return "+";
+        public void apply(int row, int column, String value, Result<String> result) {
+            result.setValue("+");
         }
     };
 
@@ -69,9 +70,10 @@ public class MatrixExample {
 
         System.out.println("==Fill function==");
         Matrix<Integer> numbers = Matrices.of(5, 5, new Function<Integer, Integer>() {
+
             @Override
-            public Integer apply(int row, int column, Integer value) {
-                return ++row + column;
+            public void apply(int row, int column, Integer value, Result<Integer> result) {
+                result.setValue(++row + column);
             }
         });
         printMatrix(numbers);
@@ -79,15 +81,14 @@ public class MatrixExample {
 
         System.out.println("==Map function==");
         Matrix<String> strings = numbers.map(new Function<Integer, String>() {
+
             @Override
-            public String apply(int row, int column, Integer value) {
-                return "<" + value + ">";
+            public void apply(int row, int column, Integer value, Result<String> result) {
+                result.setValue("<" + value + ">");
             }
         });
         printMatrix(strings);
     }
-
-
 
 
 }

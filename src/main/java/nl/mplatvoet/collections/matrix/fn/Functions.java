@@ -4,13 +4,13 @@ public class Functions {
 
     private static final Function<Object, Object> PASS_TROUGH_FUNCTION = new Function<Object, Object>() {
         @Override
-        public Object apply(int row, int column, Object value) {
-            return value;
+        public void apply(int row, int column, Object value, Result<Object> result) {
+            result.setValue(value);
         }
     };
 
     @SuppressWarnings("unchecked")
-    public static <T> Function<? super T, ? extends T> passTrough() {
-        return (Function<? super T, ? extends T>) PASS_TROUGH_FUNCTION;
+    public static <T> Function<? super T, T> passTrough() {
+        return (Function<? super T, T>) PASS_TROUGH_FUNCTION;
     }
 }
