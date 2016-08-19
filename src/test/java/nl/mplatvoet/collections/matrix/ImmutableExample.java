@@ -14,6 +14,7 @@ public class ImmutableExample {
                 return value == null ? null : "0";
             }
         });
+
         ExampleUtil.printMatrix(matrix);
         ExampleUtil.printMatrix(copy);
     }

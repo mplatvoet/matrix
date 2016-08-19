@@ -2,7 +2,6 @@ package nl.mplatvoet.collections.matrix;
 
 
 import nl.mplatvoet.collections.matrix.fn.Function;
-import nl.mplatvoet.collections.matrix.range.Range;
 
 public interface MutableMatrix<T> extends Matrix<T> {
 
@@ -14,11 +13,7 @@ public interface MutableMatrix<T> extends Matrix<T> {
 
     MutableColumn<T> getColumn(int column);
 
-    Iterable<Row<T>> rows();
-
     Iterable<MutableRow<T>> mutableRows();
-
-    Iterable<Column<T>> columns();
 
     Iterable<MutableColumn<T>> mutableColumns();
 
