@@ -105,7 +105,7 @@ public class ImmutableMatrix<T> implements Matrix<T> {
         }
     }
 
-    private <S> void fillCells(Function<?, ? extends T> transform) {
+    private void fillCells(Function<?, ? extends T> transform) {
         for (int r = 0; r < cells.length; ++r) {
             for (int c = 0; c < cells[r].length; ++c) {
                 T value = transform.apply(r, c, null);
