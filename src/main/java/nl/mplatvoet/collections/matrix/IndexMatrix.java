@@ -314,22 +314,6 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
         }
     }
 
-    //unchecked method, everything must be within bounds
-    private void updateColumnIndices(IndexColumn<T> column, int newIdx) {
-        for (int rowIndex = 0; rowIndex <= maxRowIndex; ++rowIndex) {
-
-            IndexRow<T> row = rows.get(rowIndex);
-            if (row != null) {
-                IndexCell<T> cell = row.cells.get(column.columnIndex);
-                if (cell != null) {
-                    cell.columnIndex = newIdx;
-                }
-            }
-        }
-        column.columnIndex = newIdx;
-    }
-
-
     private void evictRow(int row) {
         IndexRow<T> r = rows.get(row);
         if (r != null) {
@@ -344,7 +328,6 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
             c.delete();
             columns.remove(column);
         }
-
     }
 
     @Override
@@ -465,26 +448,6 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
     @Override
     public <R> Matrix<R> map(Range range, Function<? super T, ? extends R> function) {
         return ImmutableMatrix.copyOf(this, range, function);
-    }
-
-    @Override
-    public MutableMatrix<T> mutableMap() {
-        return copyOf(this);
-    }
-
-    @Override
-    public <R> MutableMatrix<R> mutableMap(Function<? super T, ? extends R> function) {
-        return copyOf(this, function);
-    }
-
-    @Override
-    public MutableMatrix<T> mutableMap(Range range) {
-        return copyOf(this, range);
-    }
-
-    @Override
-    public <R> MutableMatrix<R> mutableMap(Range range, Function<? super T, ? extends R> function) {
-        return copyOf(this, range, function);
     }
 
     private static final class IndexColumn<T> implements MutableColumn<T> {
