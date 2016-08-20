@@ -30,6 +30,25 @@ public final class Matrices {
         return ImmutableMatrix.of(rows, columns, fill);
     }
 
+    public static <T, C extends Iterable<T>, R extends Iterable<C>> MutableMatrix<T> copyOf(R source) {
+        checkArgument(source == null, "source cannot be null");
+
+        MutableMatrix<T> matrix = mutableOf();
+        int row = -1;
+        for (C c : source) {
+            ++row;
+            if(c == null) continue;
+
+            int col = -1;
+            for (T value : c) {
+                ++col;
+                if (value == null) continue;
+
+                matrix.put(row, col, value);
+            }
+        }
+        return matrix;
+    }
 
     public static <T> Matrix<T> copyOf(Matrix<? extends T> matrix) {
         return ImmutableMatrix.copyOf(matrix);
@@ -77,16 +96,12 @@ public final class Matrices {
     }
 
     private static <T> void sortByColumn(MutableColumn<T> column, Comparator<? super T> comparator) {
-        checkArgument(column == null, "column cannot be null");
-        checkArgument(comparator == null, "comparator cannot be null");
         int rowSize = column.getMatrix().getRowSize();
         if (rowSize <= 1) return;
         quickSort(new ColumnSortable<>(column, comparator), 0, rowSize - 1);
     }
 
     private static <T> void sortByRow(MutableRow<T> row, Comparator<? super T> comparator) {
-        checkArgument(row == null, "row cannot be null");
-        checkArgument(comparator == null, "comparator cannot be null");
         int columnSize = row.getMatrix().getColumnSize();
         if (columnSize <= 1) return;
         quickSort(new RowSortable<>(row, comparator), 0, columnSize - 1);
@@ -95,7 +110,7 @@ public final class Matrices {
 
     public static String toString(Matrix<?> matrix) {
         checkArgument(matrix == null, "matrix cannot be null");
-        return matrix.getClass().getName() + "[" + matrix.getRowSize() + ":" + matrix.getColumnSize() + "]";
+        return matrix.getClass().getSimpleName() + "[" + matrix.getRowSize() + ":" + matrix.getColumnSize() + "]";
     }
 
     public static int hashCode(Matrix<?> matrix) {

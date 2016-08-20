@@ -69,7 +69,6 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
         return new IndexMatrix<>(rows, columns, fill);
     }
 
-
     @SuppressWarnings("unchecked")
     public static <T> MutableMatrix<T> copyOf(Matrix<? extends T> matrix) {
         return copyOf(matrix, Range.of(matrix), Functions.<T>passTrough());
