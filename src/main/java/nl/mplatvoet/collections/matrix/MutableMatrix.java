@@ -5,7 +5,7 @@ import nl.mplatvoet.collections.matrix.fn.Function;
 
 public interface MutableMatrix<T> extends Matrix<T> {
 
-    MutableCell<T> getCell(int row, int column);
+    MutableMatrixCell<T> getCell(int row, int column);
 
     T get(int row, int column);
 

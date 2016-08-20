@@ -1,8 +1,9 @@
 package nl.mplatvoet.collections.matrix;
 
 
+import nl.mplatvoet.collections.matrix.fn.CellFunction;
 import nl.mplatvoet.collections.matrix.fn.Function;
-import nl.mplatvoet.collections.matrix.fn.Result;
+import nl.mplatvoet.collections.matrix.fn.DetachedCell;
 import nl.mplatvoet.collections.matrix.range.Range;
 
 import java.util.Iterator;
@@ -15,7 +16,7 @@ public class MatrixExample {
 
     private static final Function<String, String> PLUS_FACTORY = new Function<String, String>() {
         @Override
-        public void apply(int row, int column, String value, Result<String> result) {
+        public void apply(int row, int column, String value, DetachedCell<String> result) {
             result.setValue("+");
         }
     };
@@ -69,11 +70,10 @@ public class MatrixExample {
         System.out.println();
 
         System.out.println("==Fill function==");
-        Matrix<Integer> numbers = Matrices.of(5, 5, new Function<Integer, Integer>() {
-
+        Matrix<Integer> numbers = Matrices.of(5, 5, new CellFunction<Integer, MutableCell<Integer>>() {
             @Override
-            public void apply(int row, int column, Integer value, Result<Integer> result) {
-                result.setValue(++row + column);
+            public void apply(MutableCell<Integer> cell) {
+                cell.setValue(cell.getRowIndex() + 1 + cell.getColumnIndex());
             }
         });
         printMatrix(numbers);
@@ -83,7 +83,7 @@ public class MatrixExample {
         Matrix<String> strings = numbers.map(new Function<Integer, String>() {
 
             @Override
-            public void apply(int row, int column, Integer value, Result<String> result) {
+            public void apply(int row, int column, Integer value, DetachedCell<String> result) {
                 result.setValue("<" + value + ">");
             }
         });

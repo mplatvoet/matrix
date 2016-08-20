@@ -5,7 +5,7 @@ import nl.mplatvoet.collections.matrix.fn.Function;
 import nl.mplatvoet.collections.matrix.range.Range;
 
 public interface Matrix<T> {
-    Cell<T> getCell(int row, int column);
+    MatrixCell<T> getCell(int row, int column);
 
     T get(int row, int column);
 

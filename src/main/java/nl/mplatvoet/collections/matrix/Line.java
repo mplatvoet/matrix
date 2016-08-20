@@ -5,7 +5,7 @@ public interface Line<T> extends Iterable<T> {
 
     T get(int idx);
 
-    Cell<T> getCell(int idx);
+    MatrixCell<T> getCell(int idx);
 
-    Iterable<Cell<T>> cells();
+    Iterable<MatrixCell<T>> cells();
 }

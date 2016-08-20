@@ -4,7 +4,7 @@ public class Functions {
 
     private static final Function<Object, Object> PASS_TROUGH_FUNCTION = new Function<Object, Object>() {
         @Override
-        public void apply(int row, int column, Object value, Result<Object> result) {
+        public void apply(int row, int column, Object value, DetachedCell<Object> result) {
             result.setValue(value);
         }
     };

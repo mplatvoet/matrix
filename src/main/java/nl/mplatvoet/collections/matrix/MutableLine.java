@@ -5,7 +5,7 @@ import nl.mplatvoet.collections.matrix.fn.Function;
 public interface MutableLine<T> extends Line<T> {
     MutableMatrix<T> getMatrix();
 
-    MutableCell<T> getCell(int idx);
+    MutableMatrixCell<T> getCell(int idx);
 
     T put(int idx, T value);
 
@@ -15,5 +15,5 @@ public interface MutableLine<T> extends Line<T> {
 
     void fillBlanks(Function<? super T, T> function);
 
-    Iterable<MutableCell<T>> mutableCells();
+    Iterable<MutableMatrixCell<T>> mutableCells();
 }

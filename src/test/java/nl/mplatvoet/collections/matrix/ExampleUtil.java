@@ -1,18 +1,17 @@
 package nl.mplatvoet.collections.matrix;
 
-import nl.mplatvoet.collections.matrix.fn.Function;
-import nl.mplatvoet.collections.matrix.fn.Result;
+import nl.mplatvoet.collections.matrix.fn.CellFunction;
 
 import java.util.Random;
 
 public class ExampleUtil {
     public static Matrix<String> randomMatrix(int rows, int columns) {
-        return Matrices.of(rows, columns, new Function<Object, String>() {
+        return Matrices.of(rows, columns, new CellFunction<String, MutableCell<String>>() {
             private final  Random random = new Random();
             @Override
-            public void apply(int row, int column, Object value, Result<String> result ) {
+            public void apply(MutableCell<String> cell) {
                 if (random.nextInt(3) == 0) {
-                    result.setValue("*");
+                    cell.setValue("*");
                 }
             }
         });

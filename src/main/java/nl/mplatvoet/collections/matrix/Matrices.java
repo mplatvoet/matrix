@@ -1,5 +1,6 @@
 package nl.mplatvoet.collections.matrix;
 
+import nl.mplatvoet.collections.matrix.fn.CellFunction;
 import nl.mplatvoet.collections.matrix.fn.Function;
 import nl.mplatvoet.collections.matrix.range.Range;
 
@@ -26,7 +27,7 @@ public final class Matrices {
         return IndexMatrix.of(rows, columns, fill);
     }
 
-    public static <T> Matrix<T> of(int rows, int columns, Function<?, ? extends T> fill) {
+    public static <T> Matrix<T> of(int rows, int columns, CellFunction<T, MutableCell<T>> fill) {
         return ImmutableMatrix.of(rows, columns, fill);
     }
 
