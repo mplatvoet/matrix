@@ -1,6 +1,7 @@
 package nl.mplatvoet.collections.matrix;
 
 
+import nl.mplatvoet.collections.matrix.fn.CellMapFunction;
 import nl.mplatvoet.collections.matrix.fn.Function;
 import nl.mplatvoet.collections.matrix.range.Range;
 
@@ -19,11 +20,11 @@ public interface Matrix<T> {
 
     Matrix<T> map();
 
-    <R> Matrix<R> map(Function<? super T, R> function);
+    <R> Matrix<R> map(CellMapFunction<T, R> map);
 
     Matrix<T> map(Range range);
 
-    <R> Matrix<R> map(Range range, Function<? super T, R> function);
+    <R> Matrix<R> map(Range range, CellMapFunction<T, R> map);
 
     int getRowSize();
 

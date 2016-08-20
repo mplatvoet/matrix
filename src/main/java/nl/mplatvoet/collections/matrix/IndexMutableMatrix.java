@@ -1,9 +1,9 @@
 package nl.mplatvoet.collections.matrix;
 
 import nl.mplatvoet.collections.matrix.args.Arguments;
-import nl.mplatvoet.collections.matrix.fn.Function;
-import nl.mplatvoet.collections.matrix.fn.Functions;
+import nl.mplatvoet.collections.matrix.fn.CellMapFunction;
 import nl.mplatvoet.collections.matrix.fn.DetachedCell;
+import nl.mplatvoet.collections.matrix.fn.Functions;
 import nl.mplatvoet.collections.matrix.range.Range;
 
 import java.util.Iterator;
@@ -11,7 +11,7 @@ import java.util.NoSuchElementException;
 
 import static nl.mplatvoet.collections.matrix.args.Arguments.*;
 
-public class IndexMatrix<T> implements MutableMatrix<T> {
+public class IndexMutableMatrix<T> implements MutableMatrix<T> {
     private final IndexMap<IndexRow<T>> rows;
     private final IndexMap<IndexColumn<T>> columns;
 
@@ -24,7 +24,7 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
     private int maxColumnIndex = -1;
 
     @SuppressWarnings("unchecked")
-    private IndexMatrix(int initialRows, int initialColumns, Function<?, T> function) {
+    private IndexMutableMatrix(int initialRows, int initialColumns, CellMapFunction<T, T> function) {
         checkArgument(initialRows < 0, "initialRows must be >= 0, but was %s", initialRows);
         checkArgument(initialColumns < 0, "initialColumns must be >= 0, but was %s", initialColumns);
 
@@ -35,12 +35,11 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
         columns = new IndexMap<>(initialColumns);
 
         if (function != null) {
-            //Casting is safe because initial value is always null
-            fill((Function<? super T, T>) function);
+            fill(function);
         }
     }
 
-    private <S> IndexMatrix(Matrix<? extends S> matrix, Range range, Function<? super S, T> transform) {
+    private <S> IndexMutableMatrix(Matrix<S> matrix, Range range, CellMapFunction<S, T> transform) {
         Arguments.checkArgument(matrix == null, "matrix cannot be null");
         Arguments.checkArgument(range == null, "range cannot be null");
         Arguments.checkArgument(transform == null, "transform cannot be null");
@@ -61,37 +60,37 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
     }
 
     public static <T> MutableMatrix<T> of(int rows, int columns) {
-        return new IndexMatrix<>(rows, columns, null);
+        return new IndexMutableMatrix<>(rows, columns, null);
     }
 
-    public static <T> MutableMatrix<T> of(int rows, int columns, Function<?, T> fill) {
+    public static <T> MutableMatrix<T> of(int rows, int columns, CellMapFunction<T, T> fill) {
         Arguments.checkArgument(fill == null, "fill function cannot be null");
-        return new IndexMatrix<>(rows, columns, fill);
+        return new IndexMutableMatrix<>(rows, columns, fill);
     }
 
     @SuppressWarnings("unchecked")
-    public static <T> MutableMatrix<T> copyOf(Matrix<? extends T> matrix) {
-        return copyOf(matrix, Range.of(matrix), Functions.<T>passTrough());
+    public static <T> MutableMatrix<T> copyOf(Matrix<T> matrix) {
+        return copyOf(matrix, Range.of(matrix), Functions.<T, T>passTrough());
     }
 
-    public static <T> MutableMatrix<T> copyOf(Matrix<? extends T> matrix, Range range) {
+    public static <T> MutableMatrix<T> copyOf(Matrix<T> matrix, Range range) {
         if (range != null && range.matches(matrix)) {
             return copyOf(matrix);
         }
-        return copyOf(matrix, range, Functions.<T>passTrough());
+        return copyOf(matrix, range, Functions.<T, T>passTrough());
     }
 
-    public static <T, R> MutableMatrix<R> copyOf(Matrix<? extends T> matrix, Function<? super T, R> transform) {
+    public static <T, R> MutableMatrix<R> copyOf(Matrix<T> matrix, CellMapFunction<T, R> transform) {
         return copyOf(matrix, Range.of(matrix), transform);
     }
 
-    public static <T, R> MutableMatrix<R> copyOf(Matrix<? extends T> matrix, Range range, Function<? super T, R> transform) {
+    public static <T, R> MutableMatrix<R> copyOf(Matrix<T> matrix, Range range, CellMapFunction<T, R> transform) {
         //TODO check if range is empty and return a special empty matrix
 
-        return new IndexMatrix<>(matrix, range, transform);
+        return new IndexMutableMatrix<>(matrix, range, transform);
     }
 
-    private <S> void fillCells(Matrix<S> source, Range range, Function<? super S, T> transform) {
+    private <S> void fillCells(Matrix<S> source, Range range, CellMapFunction<S, T> map) {
         final int rOffset = range.getRowBeginIndex();
         final int cOffset = range.getColumnBeginIndex();
         //don't use iterator, I want to match the previous set size
@@ -100,13 +99,13 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
             Row<S> row = source.getRow(r + rOffset);
             for (int c = 0; c < range.getColumnSize(); ++c) {
                 MatrixCell<S> cell = row.getCell(c + cOffset);
-                if (!cell.isBlank()) {
-                    transform.apply(r, c, cell.getValue(), result);
-                    if (!result.isBlank()) {
-                        put(r, c, result.getValue());
-                        result.clear();
-                    }
+                result.apply(r, c);
+                map.apply(cell, result);
+                if (!result.isBlank()) {
+                    put(r, c, result.getValue());
+                    result.clear();
                 }
+                result.reset();
             }
         }
     }
@@ -128,17 +127,7 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
     }
 
     @Override
-    public void fillBlanks(Function<? super T, T> function) {
-        checkArgument(function == null, "function cannot be null");
-
-        for (int rowIndex = 0; rowIndex <= maxRowIndex; ++rowIndex) {
-            IndexRow<T> row = getRow(rowIndex);
-            row.fillBlanks(function);
-        }
-    }
-
-    @Override
-    public void fill(Function<? super T, T> function) {
+    public void fill(CellMapFunction<T, T> function) {
         checkArgument(function == null, "function cannot be null");
 
         for (int rowIndex = 0; rowIndex <= maxRowIndex; ++rowIndex) {
@@ -159,8 +148,8 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
         checkIndex(rowOffset < 0, "rowOffset must be >= 0, but was %s", rowOffset);
         checkIndex(columnOffset < 0, "columnOffset must be >= 0, but was %s", columnOffset);
 
-        if (matrix instanceof IndexMatrix) {
-            putAllIndexMatrix((IndexMatrix<T>) matrix, rowOffset, columnOffset);
+        if (matrix instanceof IndexMutableMatrix) {
+            putAllIndexMatrix((IndexMutableMatrix<T>) matrix, rowOffset, columnOffset);
         } else {
             putAllGenericMatrix(matrix, rowOffset, columnOffset);
         }
@@ -179,7 +168,7 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
         }
     }
 
-    private void putAllIndexMatrix(IndexMatrix<? extends T> matrix, int rowOffset, int columnOffset) {
+    private void putAllIndexMatrix(IndexMutableMatrix<? extends T> matrix, int rowOffset, int columnOffset) {
         for (IndexRow<? extends T> row : matrix.rows.values()) {
             for (IndexMatrixCell<? extends T> cell : row.cells.values()) {
                 if (!cell.isBlank()) {
@@ -276,6 +265,7 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
     private void validateColumn(Column<T> column) {
         validateColumn(column, "column");
     }
+
     private void validateColumn(Column<T> column, String columnName) {
         checkArgument(column == null, "%s cannot be null", columnName);
         checkState(column.getMatrix() != this, "%s does not belong to this matrix", columnName);
@@ -522,7 +512,7 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
     }
 
     @Override
-    public <R> Matrix<R> map(Function<? super T, R> function) {
+    public <R> Matrix<R> map(CellMapFunction<T, R> function) {
         return ImmutableMatrix.copyOf(this, function);
     }
 
@@ -532,12 +522,12 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
     }
 
     @Override
-    public <R> Matrix<R> map(Range range, Function<? super T, R> function) {
+    public <R> Matrix<R> map(Range range, CellMapFunction<T, R> function) {
         return ImmutableMatrix.copyOf(this, range, function);
     }
 
     private static final class IndexColumn<T> implements MutableColumn<T> {
-        private final IndexMatrix<T> matrix;
+        private final IndexMutableMatrix<T> matrix;
         private int columnIndex;
         private ColumnCellsIterable<T> cellsIterable = null;
         private MutableColumnCellsIterable<T> mutableCellsIterable = null;
@@ -545,7 +535,7 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
         private boolean deleted = false;
 
 
-        private IndexColumn(IndexMatrix<T> matrix, int columnIndex) {
+        private IndexColumn(IndexMutableMatrix<T> matrix, int columnIndex) {
             this.columnIndex = columnIndex;
             this.matrix = matrix;
         }
@@ -612,37 +602,13 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
             return mutableCellsIterable;
         }
 
-        @Override
-        public void fillBlanks(Function<? super T, T> function) {
-            assertState();
-            DetachedCell<T> result = new DetachedCell<>();
-            for (int rowIndex = 0; rowIndex <= matrix.maxRowIndex; ++rowIndex) {
-                MutableMatrixCell<T> cell = matrix.getRow(rowIndex).getCell(columnIndex);
-                if (cell.isBlank()) {
-                    function.apply(rowIndex, columnIndex, null, result);
-                    if (!result.isBlank()) {
-                        cell.setValue(result.getValue());
-                        result.clear();
-                    }
-
-                }
-            }
-        }
-
 
         @Override
-        public void fill(Function<? super T, T> function) {
+        public void fill(CellMapFunction<T, T> function) {
             assertState();
-            DetachedCell<T> result = new DetachedCell<>();
             for (int rowIndex = 0; rowIndex <= matrix.maxRowIndex; ++rowIndex) {
                 MutableMatrixCell<T> cell = matrix.getRow(rowIndex).getCell(columnIndex);
-                function.apply(rowIndex, columnIndex, cell.getValue(), result);
-                if (result.isBlank()) {
-                    cell.clear();
-                } else {
-                    cell.setValue(result.getValue());
-                    result.clear();
-                }
+                function.apply(cell, cell);
             }
         }
 
@@ -681,7 +647,7 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
 
     private static final class IndexRow<T> implements MutableRow<T> {
         private final IndexMap<IndexMatrixCell<T>> cells;
-        private final IndexMatrix<T> matrix;
+        private final IndexMutableMatrix<T> matrix;
         private int rowIndex;
 
         private boolean deleted = false;
@@ -689,7 +655,7 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
         private RowCellsIterable<T> cellsIterable = null;
         private MutableRowCellsIterable<T> mutableCellsIterable = null;
 
-        private IndexRow(IndexMatrix<T> matrix, int rowIndex) {
+        private IndexRow(IndexMutableMatrix<T> matrix, int rowIndex) {
             this.matrix = matrix;
             this.rowIndex = rowIndex;
             //prevents excess array resizing
@@ -759,34 +725,11 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
         }
 
         @Override
-        public void fill(Function<? super T, T> function) {
+        public void fill(CellMapFunction<T, T> function) {
             assertState();
-            DetachedCell<T> result = new DetachedCell<>();
             for (int columnIndex = 0; columnIndex <= matrix.maxColumnIndex; ++columnIndex) {
                 MutableMatrixCell<T> cell = getCell(columnIndex);
-                function.apply(rowIndex, columnIndex, cell.getValue(), result);
-                if (result.isBlank()) {
-                    cell.clear();
-                } else {
-                    cell.setValue(result.getValue());
-                    result.clear();
-                }
-            }
-        }
-
-        @Override
-        public void fillBlanks(Function<? super T, T> function) {
-            assertState();
-            DetachedCell<T> result = new DetachedCell<>();
-            for (int columnIndex = 0; columnIndex <= matrix.maxColumnIndex; ++columnIndex) {
-                MutableMatrixCell<T> cell = getCell(columnIndex);
-                if (cell.isBlank()) {
-                    function.apply(rowIndex, columnIndex, null, result);
-                    if (!result.isBlank()) {
-                        cell.setValue(result.getValue());
-                        result.clear();
-                    }
-                }
+                function.apply(cell, cell);
             }
         }
 
@@ -837,21 +780,21 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
     private static final class IndexMatrixCell<T> implements MutableMatrixCell<T> {
         private static final Object BLANK = new Object();
 
-        private IndexMatrix<T> matrix;
+        private IndexMutableMatrix<T> matrix;
         private int rowIndex;
         private int columnIndex;
         private T value;
 
         private boolean deleted = false;
 
-        private IndexMatrixCell(IndexMatrix<T> matrix, int rowIndex, int columnIndex, T value) {
+        private IndexMatrixCell(IndexMutableMatrix<T> matrix, int rowIndex, int columnIndex, T value) {
             this.matrix = matrix;
             this.rowIndex = rowIndex;
             this.columnIndex = columnIndex;
             this.value = value;
         }
 
-        private IndexMatrixCell(IndexMatrix<T> matrix, int rowIndex, int columnIndex) {
+        private IndexMatrixCell(IndexMutableMatrix<T> matrix, int rowIndex, int columnIndex) {
             this(matrix, rowIndex, columnIndex, IndexMatrixCell.<T>blank());
         }
 
@@ -953,11 +896,11 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
 
 
     private static abstract class AbstractRowsIterator<T, R extends Row<T>> implements Iterator<R> {
-        final IndexMatrix<T> matrix;
+        final IndexMutableMatrix<T> matrix;
         private int index = -1;
         private boolean deleted = false;
 
-        private AbstractRowsIterator(IndexMatrix<T> matrix) {
+        private AbstractRowsIterator(IndexMutableMatrix<T> matrix) {
             this.matrix = matrix;
         }
 
@@ -989,7 +932,7 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
     }
 
     private static class MutableRowsIterator<T> extends AbstractRowsIterator<T, MutableRow<T>> {
-        private MutableRowsIterator(IndexMatrix<T> matrix) {
+        private MutableRowsIterator(IndexMutableMatrix<T> matrix) {
             super(matrix);
         }
 
@@ -1000,7 +943,7 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
     }
 
     private static class RowsIterator<T> extends AbstractRowsIterator<T, Row<T>> {
-        private RowsIterator(IndexMatrix<T> matrix) {
+        private RowsIterator(IndexMutableMatrix<T> matrix) {
             super(matrix);
         }
 
@@ -1012,12 +955,12 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
 
 
     private static abstract class AbstractColumnsIterator<T, C extends Column<T>> implements Iterator<C> {
-        final IndexMatrix<T> matrix;
+        final IndexMutableMatrix<T> matrix;
         private int index = -1;
         private boolean deleted = false;
 
 
-        private AbstractColumnsIterator(IndexMatrix<T> matrix) {
+        private AbstractColumnsIterator(IndexMutableMatrix<T> matrix) {
             this.matrix = matrix;
         }
 
@@ -1049,7 +992,7 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
     }
 
     private static class ColumnsIterator<T> extends AbstractColumnsIterator<T, Column<T>> {
-        private ColumnsIterator(IndexMatrix<T> matrix) {
+        private ColumnsIterator(IndexMutableMatrix<T> matrix) {
             super(matrix);
         }
 
@@ -1060,7 +1003,7 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
     }
 
     private static class MutableColumnsIterator<T> extends AbstractColumnsIterator<T, MutableColumn<T>> {
-        private MutableColumnsIterator(IndexMatrix<T> matrix) {
+        private MutableColumnsIterator(IndexMutableMatrix<T> matrix) {
             super(matrix);
         }
 
@@ -1334,9 +1277,9 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
     }
 
     private static class ColumnsIterable<T> implements Iterable<Column<T>> {
-        private final IndexMatrix<T> matrix;
+        private final IndexMutableMatrix<T> matrix;
 
-        private ColumnsIterable(IndexMatrix<T> matrix) {
+        private ColumnsIterable(IndexMutableMatrix<T> matrix) {
             this.matrix = matrix;
         }
 
@@ -1347,9 +1290,9 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
     }
 
     private static class MutableColumnsIterable<T> implements Iterable<MutableColumn<T>> {
-        private final IndexMatrix<T> matrix;
+        private final IndexMutableMatrix<T> matrix;
 
-        private MutableColumnsIterable(IndexMatrix<T> matrix) {
+        private MutableColumnsIterable(IndexMutableMatrix<T> matrix) {
             this.matrix = matrix;
         }
 
@@ -1360,9 +1303,9 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
     }
 
     private static class RowsIterable<T> implements Iterable<Row<T>> {
-        private final IndexMatrix<T> matrix;
+        private final IndexMutableMatrix<T> matrix;
 
-        private RowsIterable(IndexMatrix<T> matrix) {
+        private RowsIterable(IndexMutableMatrix<T> matrix) {
             this.matrix = matrix;
         }
 
@@ -1373,9 +1316,9 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
     }
 
     private static class MutableRowsIterable<T> implements Iterable<MutableRow<T>> {
-        private final IndexMatrix<T> matrix;
+        private final IndexMutableMatrix<T> matrix;
 
-        private MutableRowsIterable(IndexMatrix<T> matrix) {
+        private MutableRowsIterable(IndexMutableMatrix<T> matrix) {
             this.matrix = matrix;
         }
 

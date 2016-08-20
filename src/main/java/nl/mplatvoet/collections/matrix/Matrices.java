@@ -1,6 +1,7 @@
 package nl.mplatvoet.collections.matrix;
 
 import nl.mplatvoet.collections.matrix.fn.CellFunction;
+import nl.mplatvoet.collections.matrix.fn.CellMapFunction;
 import nl.mplatvoet.collections.matrix.fn.Function;
 import nl.mplatvoet.collections.matrix.range.Range;
 
@@ -16,15 +17,15 @@ public final class Matrices {
     }
 
     public static <T> MutableMatrix<T> mutableOf() {
-        return IndexMatrix.of();
+        return IndexMutableMatrix.of();
     }
 
     public static <T> MutableMatrix<T> mutableOf(int rows, int columns) {
-        return IndexMatrix.of(rows, columns);
+        return IndexMutableMatrix.of(rows, columns);
     }
 
-    public static <T> MutableMatrix<T> mutableOf(int rows, int columns, Function<?, T> fill) {
-        return IndexMatrix.of(rows, columns, fill);
+    public static <T> MutableMatrix<T> mutableOf(int rows, int columns, CellMapFunction<T, T> fill) {
+        return IndexMutableMatrix.of(rows, columns, fill);
     }
 
     public static <T> Matrix<T> of(int rows, int columns, CellFunction<T, MutableCell<T>> fill) {
@@ -51,36 +52,36 @@ public final class Matrices {
         return matrix;
     }
 
-    public static <T> Matrix<T> copyOf(Matrix<? extends T> matrix) {
+    public static <T> Matrix<T> copyOf(Matrix<T> matrix) {
         return ImmutableMatrix.copyOf(matrix);
     }
 
-    public static <T> Matrix<T> copyOf(Matrix<? extends T> matrix, Range range) {
+    public static <T> Matrix<T> copyOf(Matrix<T> matrix, Range range) {
         return ImmutableMatrix.copyOf(matrix, range);
     }
 
-    public static <T, R> Matrix<R> copyOf(Matrix<? extends T> matrix, Function<? super T, R> transform) {
+    public static <T, R> Matrix<R> copyOf(Matrix<T> matrix, CellMapFunction<T, R> transform) {
         return ImmutableMatrix.copyOf(matrix, transform);
     }
 
-    public static <T, R> Matrix<R> copyOf(Matrix<? extends T> matrix, Range range, Function<? super T, R> transform) {
+    public static <T, R> Matrix<R> copyOf(Matrix<T> matrix, Range range, CellMapFunction<T, R> transform) {
         return ImmutableMatrix.copyOf(matrix, range, transform);
     }
 
-    public static <T> MutableMatrix<T> mutableCopyOf(Matrix<? extends T> matrix) {
-        return IndexMatrix.copyOf(matrix);
+    public static <T> MutableMatrix<T> mutableCopyOf(Matrix<T> matrix) {
+        return IndexMutableMatrix.copyOf(matrix);
     }
 
-    public static <T> MutableMatrix<T> mutableCopyOf(Matrix<? extends T> matrix, Range range) {
-        return IndexMatrix.copyOf(matrix, range);
+    public static <T> MutableMatrix<T> mutableCopyOf(Matrix<T> matrix, Range range) {
+        return IndexMutableMatrix.copyOf(matrix, range);
     }
 
-    public static <T, R> MutableMatrix<R> mutableCopyOf(Matrix<? extends T> matrix, Function<? super T, R> transform) {
-        return IndexMatrix.copyOf(matrix, transform);
+    public static <T, R> MutableMatrix<R> mutableCopyOf(Matrix<T> matrix, CellMapFunction<T, R> transform) {
+        return IndexMutableMatrix.copyOf(matrix, transform);
     }
 
-    public static <T, R> MutableMatrix<R> mutableCopyOf(Matrix<? extends T> matrix, Range range, Function<? super T, R> transform) {
-        return IndexMatrix.copyOf(matrix, range, transform);
+    public static <T, R> MutableMatrix<R> mutableCopyOf(Matrix<T> matrix, Range range, CellMapFunction<T, R> transform) {
+        return IndexMutableMatrix.copyOf(matrix, range, transform);
     }
 
     public static <T> void sortBy(MutableLine<T> line, Comparator<? super T> comparator) {

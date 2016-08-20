@@ -1,6 +1,6 @@
 package nl.mplatvoet.collections.matrix;
 
-import nl.mplatvoet.collections.matrix.fn.Function;
+import nl.mplatvoet.collections.matrix.fn.CellMapFunction;
 
 public interface MutableLine<T> extends Line<T> {
     MutableMatrix<T> getMatrix();
@@ -11,9 +11,7 @@ public interface MutableLine<T> extends Line<T> {
 
     void clear();
 
-    void fill(Function<? super T, T> function);
-
-    void fillBlanks(Function<? super T, T> function);
+    void fill(CellMapFunction<T, T> function);
 
     Iterable<MutableMatrixCell<T>> mutableCells();
 }

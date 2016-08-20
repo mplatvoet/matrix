@@ -1,9 +1,7 @@
 package nl.mplatvoet.collections.matrix;
 
 
-import nl.mplatvoet.collections.matrix.fn.CellFunction;
-import nl.mplatvoet.collections.matrix.fn.Function;
-import nl.mplatvoet.collections.matrix.fn.DetachedCell;
+import nl.mplatvoet.collections.matrix.fn.*;
 import nl.mplatvoet.collections.matrix.range.Range;
 
 import java.util.Iterator;
@@ -14,12 +12,12 @@ import static nl.mplatvoet.collections.matrix.Matrices.mutableCopyOf;
 
 public class MatrixExample {
 
-    private static final Function<String, String> PLUS_FACTORY = new Function<String, String>() {
+    private static final CellMapFunction<String, String> FILL_BLANK_FN = Functions.blanks(new CellMapFunction<String, String>() {
         @Override
-        public void apply(int row, int column, String value, DetachedCell<String> result) {
-            result.setValue("+");
+        public void apply(MatrixCell<String> source, MutableCell<String> dest) {
+            dest.setValue("+");
         }
-    };
+    });
 
     public static void main(String[] args) throws Exception {
         Matrix<String> matrix = randomMatrix(10, 20);
@@ -33,7 +31,7 @@ public class MatrixExample {
         System.out.println();
 
         System.out.println("==Insert row==");
-        subMatrix.insertRow(3).fillBlanks(PLUS_FACTORY);
+        subMatrix.insertRow(3).fill(FILL_BLANK_FN);
         printMatrix(subMatrix);
         System.out.println();
 
@@ -43,7 +41,7 @@ public class MatrixExample {
         System.out.println();
 
         System.out.println("==Insert column==");
-        subMatrix.insertColumn(5).fillBlanks(PLUS_FACTORY);
+        subMatrix.insertColumn(5).fill(FILL_BLANK_FN);
         printMatrix(subMatrix);
         System.out.println();
 
@@ -80,11 +78,10 @@ public class MatrixExample {
         System.out.println();
 
         System.out.println("==Map function==");
-        Matrix<String> strings = numbers.map(new Function<Integer, String>() {
-
+        Matrix<String> strings = numbers.map(new CellMapFunction<Integer, String>() {
             @Override
-            public void apply(int row, int column, Integer value, DetachedCell<String> result) {
-                result.setValue("<" + value + ">");
+            public void apply(MatrixCell<Integer> source, MutableCell<String> dest) {
+                dest.setValue("<" + source.getValue() + ">");
             }
         });
         printMatrix(strings);

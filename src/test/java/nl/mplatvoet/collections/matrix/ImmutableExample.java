@@ -1,5 +1,6 @@
 package nl.mplatvoet.collections.matrix;
 
+import nl.mplatvoet.collections.matrix.fn.CellMapFunction;
 import nl.mplatvoet.collections.matrix.fn.Function;
 import nl.mplatvoet.collections.matrix.fn.DetachedCell;
 
@@ -9,12 +10,11 @@ public class ImmutableExample {
     public static void main(String[] args) {
         Matrix<String> matrix = randomMatrix(25, 50);
 
-        Matrix<String> copy = matrix.map(new Function<String, String>() {
-
+        Matrix<String> copy = matrix.map(new CellMapFunction<String, String>() {
             @Override
-            public void apply(int row, int column, String value, DetachedCell<String> result) {
-                if(value != null) {
-                    result.setValue("0");
+            public void apply(MatrixCell<String> source, MutableCell<String> dest) {
+                if (!source.isBlank()) {
+                    dest.setValue("0");
                 }
             }
         });

@@ -1,6 +1,7 @@
 package nl.mplatvoet.collections.matrix;
 
 
+import nl.mplatvoet.collections.matrix.fn.CellMapFunction;
 import nl.mplatvoet.collections.matrix.fn.Function;
 
 public interface MutableMatrix<T> extends Matrix<T> {
@@ -49,7 +50,5 @@ public interface MutableMatrix<T> extends Matrix<T> {
 
     void clear();
 
-    void fill(Function<? super T, T> function);
-
-    void fillBlanks(Function<? super T, T> function);
+    void fill(CellMapFunction<T, T> map);
 }
