@@ -40,7 +40,7 @@ public class ImmutableMatrix<T> implements Matrix<T> {
     private ImmutableMatrix(int rows, int columns, CellFunction<T, MutableCell<T>> fill) {
         Arguments.checkArgument(rows < 0, "row must be >= 0 but was %s", rows);
         Arguments.checkArgument(columns < 0, "row must be >= 0 but was %s", columns);
-        Arguments.checkArgument(fill == null, "fill function cannot be null");
+        Arguments.checkArgument(fill == null, "cells function cannot be null");
 
 
         cells = new AbstractMatrixCell[rows][columns];

@@ -11,7 +11,7 @@ public interface MutableLine<T> extends Line<T> {
 
     void clear();
 
-    void fill(CellMapFunction<T, T> function);
+    void cells(CellMapFunction<T, T> function);
 
     Iterable<MutableMatrixCell<T>> mutableCells();
 }

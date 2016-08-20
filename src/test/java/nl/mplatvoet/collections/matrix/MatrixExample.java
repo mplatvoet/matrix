@@ -31,7 +31,7 @@ public class MatrixExample {
         System.out.println();
 
         System.out.println("==Insert row==");
-        subMatrix.insertRow(3).fill(FILL_BLANK_FN);
+        subMatrix.insertRow(3).cells(FILL_BLANK_FN);
         printMatrix(subMatrix);
         System.out.println();
 
@@ -41,7 +41,7 @@ public class MatrixExample {
         System.out.println();
 
         System.out.println("==Insert column==");
-        subMatrix.insertColumn(5).fill(FILL_BLANK_FN);
+        subMatrix.insertColumn(5).cells(FILL_BLANK_FN);
         printMatrix(subMatrix);
         System.out.println();
 

@@ -35,7 +35,7 @@ public class IndexMutableMatrix<T> implements MutableMatrix<T> {
         columns = new IndexMap<>(initialColumns);
 
         if (function != null) {
-            fill(function);
+            cells(function);
         }
     }
 
@@ -64,7 +64,7 @@ public class IndexMutableMatrix<T> implements MutableMatrix<T> {
     }
 
     public static <T> MutableMatrix<T> of(int rows, int columns, CellMapFunction<T, T> fill) {
-        Arguments.checkArgument(fill == null, "fill function cannot be null");
+        Arguments.checkArgument(fill == null, "cells function cannot be null");
         return new IndexMutableMatrix<>(rows, columns, fill);
     }
 
@@ -127,12 +127,12 @@ public class IndexMutableMatrix<T> implements MutableMatrix<T> {
     }
 
     @Override
-    public void fill(CellMapFunction<T, T> function) {
+    public void cells(CellMapFunction<T, T> function) {
         checkArgument(function == null, "function cannot be null");
 
         for (int rowIndex = 0; rowIndex <= maxRowIndex; ++rowIndex) {
             IndexRow<T> row = getRow(rowIndex);
-            row.fill(function);
+            row.cells(function);
         }
     }
 
@@ -604,7 +604,7 @@ public class IndexMutableMatrix<T> implements MutableMatrix<T> {
 
 
         @Override
-        public void fill(CellMapFunction<T, T> function) {
+        public void cells(CellMapFunction<T, T> function) {
             assertState();
             for (int rowIndex = 0; rowIndex <= matrix.maxRowIndex; ++rowIndex) {
                 MutableMatrixCell<T> cell = matrix.getRow(rowIndex).getCell(columnIndex);
@@ -725,7 +725,7 @@ public class IndexMutableMatrix<T> implements MutableMatrix<T> {
         }
 
         @Override
-        public void fill(CellMapFunction<T, T> function) {
+        public void cells(CellMapFunction<T, T> function) {
             assertState();
             for (int columnIndex = 0; columnIndex <= matrix.maxColumnIndex; ++columnIndex) {
                 MutableMatrixCell<T> cell = getCell(columnIndex);
