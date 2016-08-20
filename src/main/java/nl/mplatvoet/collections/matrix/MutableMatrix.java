@@ -35,6 +35,10 @@ public interface MutableMatrix<T> extends Matrix<T> {
 
     void swapRow(Row<T> firstRow, Row<T> secondRow);
 
+    void swapColumn(Column<T> firstColumn, Column<T> secondColumn);
+
+    void swapColumn(int firstColumn, int secondColumn);
+
     void deleteRow(int row);
 
     void deleteRow(Row<T> row);
@@ -47,5 +51,5 @@ public interface MutableMatrix<T> extends Matrix<T> {
 
     void fill(Function<? super T, T> function);
 
-    void fillBlanks(Function<? super T,  T> function);
+    void fillBlanks(Function<? super T, T> function);
 }

@@ -1,6 +1,5 @@
 package nl.mplatvoet.collections.matrix;
 
-import nl.mplatvoet.collections.matrix.args.Arguments;
 import nl.mplatvoet.collections.matrix.fn.Function;
 import nl.mplatvoet.collections.matrix.range.Range;
 
@@ -40,11 +39,11 @@ public final class Matrices {
         return ImmutableMatrix.copyOf(matrix, range);
     }
 
-    public static <T, R> Matrix<R> copyOf(Matrix<? extends T> matrix, Function<? super T,  R> transform) {
+    public static <T, R> Matrix<R> copyOf(Matrix<? extends T> matrix, Function<? super T, R> transform) {
         return ImmutableMatrix.copyOf(matrix, transform);
     }
 
-    public static <T, R> Matrix<R> copyOf(Matrix<? extends T> matrix, Range range, Function<? super T,  R> transform) {
+    public static <T, R> Matrix<R> copyOf(Matrix<? extends T> matrix, Range range, Function<? super T, R> transform) {
         return ImmutableMatrix.copyOf(matrix, range, transform);
     }
 
@@ -56,11 +55,11 @@ public final class Matrices {
         return IndexMatrix.copyOf(matrix, range);
     }
 
-    public static <T, R> MutableMatrix<R> mutableCopyOf(Matrix<? extends T> matrix, Function<? super T,  R> transform) {
+    public static <T, R> MutableMatrix<R> mutableCopyOf(Matrix<? extends T> matrix, Function<? super T, R> transform) {
         return IndexMatrix.copyOf(matrix, transform);
     }
 
-    public static <T, R> MutableMatrix<R> mutableCopyOf(Matrix<? extends T> matrix, Range range, Function<? super T,  R> transform) {
+    public static <T, R> MutableMatrix<R> mutableCopyOf(Matrix<? extends T> matrix, Range range, Function<? super T, R> transform) {
         return IndexMatrix.copyOf(matrix, range, transform);
     }
 
@@ -70,7 +69,15 @@ public final class Matrices {
         checkArgument(comparator == null, "comparator cannot be null");
         int rowSize = column.getMatrix().getRowSize();
         if (rowSize <= 1) return;
-        quickSort(column, comparator, 0, rowSize -1);
+        quickSort(new ColumnSortable<>(column, comparator), 0, rowSize - 1);
+    }
+
+    public static <T> void sortByRow(MutableRow<T> row, Comparator<? super T> comparator) {
+        checkArgument(row == null, "row cannot be null");
+        checkArgument(comparator == null, "comparator cannot be null");
+        int columnSize = row.getMatrix().getColumnSize();
+        if (columnSize <= 1) return;
+        quickSort(new RowSortable<>(row, comparator), 0, columnSize - 1);
     }
 
 
@@ -124,36 +131,95 @@ public final class Matrices {
         return first.equals(second);
     }
 
-    private static <T> void quickSort(MutableColumn<T> column, Comparator<? super T> comparator, int low, int high) {
+    private static <T> void quickSort(Sortable<T> sortable, int low, int high) {
         if (low >= high)
             return;
 
         // pick the pivot
         int middle = low + (high - low) / 2;
-        T pivot = column.get(middle);
+        T pivot = sortable.get(middle);
 
         // make left < pivot and right > pivot
         int i = low, j = high;
         while (i <= j) {
-            while (comparator.compare(column.get(i), pivot) < 0) {
+            while (sortable.compare(sortable.get(i), pivot) < 0) {
                 i++;
             }
 
-            while (comparator.compare(column.get(j), pivot) > 0) {
+            while (sortable.compare(sortable.get(j), pivot) > 0) {
                 j--;
             }
 
             if (i <= j) {
-                column.getMatrix().swapRow(i, j);
+                sortable.swap(i, j);
                 i++;
                 j--;
             }
         }
 
         if (low < j)
-            quickSort(column, comparator, low, j);
+            quickSort(sortable, low, j);
 
         if (high > i)
-            quickSort(column, comparator, i, high);
+            quickSort(sortable, i, high);
+    }
+
+    private interface Sortable<T> {
+        T get(int i);
+
+        void swap(int i, int j);
+
+        int compare(T first, T second);
+    }
+
+    private static class ColumnSortable<T> extends LineSortable<T, MutableColumn<T>> {
+
+        protected ColumnSortable(MutableColumn<T> line, Comparator<? super T> comparator) {
+            super(line, comparator);
+        }
+
+        @Override
+        protected void swap(MutableColumn<T> line, int i, int j) {
+            line.getMatrix().swapRow(i, j);
+        }
+    }
+
+    private static class RowSortable<T> extends LineSortable<T, MutableRow<T>> {
+
+        protected RowSortable(MutableRow<T> line, Comparator<? super T> comparator) {
+            super(line, comparator);
+        }
+
+        @Override
+        protected void swap(MutableRow<T> line, int i, int j) {
+            line.getMatrix().swapColumn(i, j);
+        }
+    }
+
+    private static abstract class LineSortable<T, E extends MutableLine<T>> implements Sortable<T> {
+        private final E line;
+        private final Comparator<? super T> comparator;
+
+        protected LineSortable(E line, Comparator<? super T> comparator) {
+            this.line = line;
+            this.comparator = comparator;
+        }
+
+        protected abstract void swap(E line, int i, int j);
+
+        @Override
+        public T get(int i) {
+            return line.get(i);
+        }
+
+        @Override
+        public void swap(int i, int j) {
+            swap(line, i, j);
+        }
+
+        @Override
+        public int compare(T first, T second) {
+            return comparator.compare(first, second);
+        }
     }
 }

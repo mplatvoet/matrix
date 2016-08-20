@@ -82,11 +82,11 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
         return copyOf(matrix, range, Functions.<T>passTrough());
     }
 
-    public static <T, R> MutableMatrix<R> copyOf(Matrix<? extends T> matrix, Function<? super T,  R> transform) {
+    public static <T, R> MutableMatrix<R> copyOf(Matrix<? extends T> matrix, Function<? super T, R> transform) {
         return copyOf(matrix, Range.of(matrix), transform);
     }
 
-    public static <T, R> MutableMatrix<R> copyOf(Matrix<? extends T> matrix, Range range, Function<? super T,  R> transform) {
+    public static <T, R> MutableMatrix<R> copyOf(Matrix<? extends T> matrix, Range range, Function<? super T, R> transform) {
         //TODO check if range is empty and return a special empty matrix
 
         return new IndexMatrix<>(matrix, range, transform);
@@ -139,7 +139,7 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
     }
 
     @Override
-    public void fill(Function<? super T,  T> function) {
+    public void fill(Function<? super T, T> function) {
         checkArgument(function == null, "function cannot be null");
 
         for (int rowIndex = 0; rowIndex <= maxRowIndex; ++rowIndex) {
@@ -251,6 +251,7 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
     private void validateRow(Row<T> row) {
         validateRow(row, "row");
     }
+
     private void validateRow(Row<T> row, String rowName) {
         checkArgument(row == null, "%s cannot be null", rowName);
         checkState(row.getMatrix() != this, "%s does not belong to this matrix", rowName);
@@ -274,8 +275,11 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
     }
 
     private void validateColumn(Column<T> column) {
-        checkArgument(column == null, "row cannot be null");
-        checkState(column.getMatrix() != this, "row does not belong to this matrix");
+        validateColumn(column, "column");
+    }
+    private void validateColumn(Column<T> column, String columnName) {
+        checkArgument(column == null, "%s cannot be null", columnName);
+        checkState(column.getMatrix() != this, "%s does not belong to this matrix", columnName);
     }
 
     @Override
@@ -304,6 +308,54 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
         if (second != null) {
             updateRowIndices(second, firstRow);
             rows.put(firstRow, second);
+        }
+    }
+
+    @Override
+    public void swapColumn(Column<T> firstColumn, Column<T> secondColumn) {
+        validateColumn(firstColumn, "firstColumn");
+        validateColumn(secondColumn, "secondColumn");
+        swapColumn(firstColumn.getColumnIndex(), secondColumn.getColumnIndex());
+    }
+
+
+    @Override
+    public void swapColumn(int firstColumn, int secondColumn) {
+        checkIndex(firstColumn < 0 || firstColumn > maxColumnIndex
+                , "firstColumn must be >= 0 and <= %s, but was %s", maxColumnIndex, firstColumn);
+        checkIndex(secondColumn < 0 || secondColumn > maxColumnIndex
+                , "secondColumn must be >= 0 and <= %s, but was %s", maxColumnIndex, secondColumn);
+        if (firstColumn == secondColumn) return;
+
+        IndexColumn<T> first = columns.get(firstColumn);
+        IndexColumn<T> second = columns.get(secondColumn);
+        columns.remove(firstColumn);
+        columns.remove(secondColumn);
+
+        if (first != null) {
+            first.columnIndex = secondColumn;
+            columns.put(secondColumn, first);
+        }
+
+        if (second != null) {
+            second.columnIndex = firstColumn;
+            columns.put(firstColumn, second);
+        }
+        for (IndexRow<T> row : rows.values()) {
+            IndexCell<T> firstCell = row.cells.get(firstColumn);
+            IndexCell<T> secondCell = row.cells.get(secondColumn);
+            row.cells.remove(firstColumn);
+            row.cells.remove(secondColumn);
+
+            if (firstCell != null) {
+                firstCell.columnIndex = secondColumn;
+                row.cells.put(secondColumn, firstCell);
+            }
+
+            if (secondCell != null) {
+                secondCell.columnIndex = firstColumn;
+                row.cells.put(firstColumn, secondCell);
+            }
         }
     }
 
