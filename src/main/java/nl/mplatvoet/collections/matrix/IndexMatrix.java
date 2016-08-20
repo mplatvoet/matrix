@@ -249,8 +249,11 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
     }
 
     private void validateRow(Row<T> row) {
-        checkArgument(row == null, "row cannot be null");
-        checkState(row.getMatrix() != this, "row does not belong to this matrix");
+        validateRow(row, "row");
+    }
+    private void validateRow(Row<T> row, String rowName) {
+        checkArgument(row == null, "%s cannot be null", rowName);
+        checkState(row.getMatrix() != this, "%s does not belong to this matrix", rowName);
     }
 
     @Override
@@ -273,6 +276,35 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
     private void validateColumn(Column<T> column) {
         checkArgument(column == null, "row cannot be null");
         checkState(column.getMatrix() != this, "row does not belong to this matrix");
+    }
+
+    @Override
+    public void swapRow(Row<T> firstRow, Row<T> secondRow) {
+        validateRow(firstRow, "firstRow");
+        validateRow(secondRow, "secondRow");
+        swapRow(firstRow.getRowIndex(), secondRow.getRowIndex());
+    }
+
+    @Override
+    public void swapRow(int firstRow, int secondRow) {
+        checkIndex(firstRow < 0 || firstRow > maxRowIndex, "firstRow must be >= 0 and <= %s, but was %s", maxRowIndex, firstRow);
+        checkIndex(secondRow < 0 || secondRow > maxRowIndex, "secondRow must be >= 0 and <= %s, but was %s", maxRowIndex, secondRow);
+        if (firstRow == secondRow) return;
+
+        IndexRow<T> first = rows.get(firstRow);
+        IndexRow<T> second = rows.get(secondRow);
+        rows.remove(firstRow);
+        rows.remove(secondRow);
+
+        if (first != null) {
+            updateRowIndices(first, secondRow);
+            rows.put(secondRow, first);
+        }
+
+        if (second != null) {
+            updateRowIndices(second, firstRow);
+            rows.put(firstRow, second);
+        }
     }
 
     //expects fromIdx to be within bounds
@@ -360,9 +392,7 @@ public class IndexMatrix<T> implements MutableMatrix<T> {
 
     @Override
     public MutableColumn<T> getColumn(int column) {
-        if (column < 0 || column > maxColumnIndex) {
-            throw new IndexOutOfBoundsException("Column must be >= 0 and <= " + maxColumnIndex + ", but was: " + column);
-        }
+        checkIndex(column < 0 || column > maxColumnIndex, "column must be >= 0 and <= %s, but was %s", maxColumnIndex, column);
         IndexColumn<T> c = columns.get(column);
         if (c == null) {
             c = new IndexColumn<>(this, column);

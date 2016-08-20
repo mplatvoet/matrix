@@ -4,7 +4,10 @@ import nl.mplatvoet.collections.matrix.args.Arguments;
 import nl.mplatvoet.collections.matrix.fn.Function;
 import nl.mplatvoet.collections.matrix.range.Range;
 
+import java.util.Comparator;
 import java.util.Iterator;
+
+import static nl.mplatvoet.collections.matrix.args.Arguments.checkArgument;
 
 
 public final class Matrices {
@@ -62,13 +65,22 @@ public final class Matrices {
     }
 
 
+    public static <T> void sortByColumn(MutableColumn<T> column, Comparator<? super T> comparator) {
+        checkArgument(column == null, "column cannot be null");
+        checkArgument(comparator == null, "comparator cannot be null");
+        int rowSize = column.getMatrix().getRowSize();
+        if (rowSize <= 1) return;
+        quickSort(column, comparator, 0, rowSize -1);
+    }
+
+
     public static String toString(Matrix<?> matrix) {
-        Arguments.checkArgument(matrix == null, "matrix cannot be null");
+        checkArgument(matrix == null, "matrix cannot be null");
         return matrix.getClass().getName() + "[" + matrix.getRowSize() + ":" + matrix.getColumnSize() + "]";
     }
 
     public static int hashCode(Matrix<?> matrix) {
-        Arguments.checkArgument(matrix == null, "matrix cannot be null");
+        checkArgument(matrix == null, "matrix cannot be null");
 
         int h = ((Integer) matrix.getRowSize()).hashCode() ^ ((Integer) matrix.getColumnSize()).hashCode();
         for (Row<?> row : matrix.rows()) {
@@ -110,5 +122,38 @@ public final class Matrices {
         if (first == null || second == null) return false;
         //
         return first.equals(second);
+    }
+
+    private static <T> void quickSort(MutableColumn<T> column, Comparator<? super T> comparator, int low, int high) {
+        if (low >= high)
+            return;
+
+        // pick the pivot
+        int middle = low + (high - low) / 2;
+        T pivot = column.get(middle);
+
+        // make left < pivot and right > pivot
+        int i = low, j = high;
+        while (i <= j) {
+            while (comparator.compare(column.get(i), pivot) < 0) {
+                i++;
+            }
+
+            while (comparator.compare(column.get(j), pivot) > 0) {
+                j--;
+            }
+
+            if (i <= j) {
+                column.getMatrix().swapRow(i, j);
+                i++;
+                j--;
+            }
+        }
+
+        if (low < j)
+            quickSort(column, comparator, low, j);
+
+        if (high > i)
+            quickSort(column, comparator, i, high);
     }
 }

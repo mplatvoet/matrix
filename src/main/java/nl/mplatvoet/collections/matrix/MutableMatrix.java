@@ -31,6 +31,10 @@ public interface MutableMatrix<T> extends Matrix<T> {
 
     MutableColumn<T> insertColumn(Column<T> column);
 
+    void swapRow(int firstRow, int secondRow);
+
+    void swapRow(Row<T> firstRow, Row<T> secondRow);
+
     void deleteRow(int row);
 
     void deleteRow(Row<T> row);
