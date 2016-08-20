@@ -17,7 +17,7 @@ public class SortByRowExample {
         System.out.println("==unsorted==");
         ExampleUtil.printMatrix(matrix);
 
-        Matrices.sortByColumn(matrix.getColumn(0), String.CASE_INSENSITIVE_ORDER);
+        Matrices.sortBy(matrix.getColumn(0), String.CASE_INSENSITIVE_ORDER);
         System.out.println("==sorted==");
         ExampleUtil.printMatrix(matrix);
     }

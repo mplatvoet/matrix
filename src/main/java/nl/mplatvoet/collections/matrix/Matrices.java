@@ -63,8 +63,20 @@ public final class Matrices {
         return IndexMatrix.copyOf(matrix, range, transform);
     }
 
+    public static <T> void sortBy(MutableLine<T> line, Comparator<? super T> comparator) {
+        checkArgument(line == null, "line cannot be null");
+        checkArgument(comparator == null, "comparator cannot be null");
 
-    public static <T> void sortByColumn(MutableColumn<T> column, Comparator<? super T> comparator) {
+        if (line instanceof MutableColumn) {
+            sortByColumn((MutableColumn<T>) line, comparator);
+        } else if (line instanceof MutableRow){
+            sortByRow((MutableRow<T>) line, comparator);
+        } else {
+            throw new IllegalArgumentException("unknown line type: " + line);
+        }
+    }
+
+    private static <T> void sortByColumn(MutableColumn<T> column, Comparator<? super T> comparator) {
         checkArgument(column == null, "column cannot be null");
         checkArgument(comparator == null, "comparator cannot be null");
         int rowSize = column.getMatrix().getRowSize();
@@ -72,7 +84,7 @@ public final class Matrices {
         quickSort(new ColumnSortable<>(column, comparator), 0, rowSize - 1);
     }
 
-    public static <T> void sortByRow(MutableRow<T> row, Comparator<? super T> comparator) {
+    private static <T> void sortByRow(MutableRow<T> row, Comparator<? super T> comparator) {
         checkArgument(row == null, "row cannot be null");
         checkArgument(comparator == null, "comparator cannot be null");
         int columnSize = row.getMatrix().getColumnSize();
