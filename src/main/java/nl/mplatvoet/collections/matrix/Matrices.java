@@ -2,7 +2,6 @@ package nl.mplatvoet.collections.matrix;
 
 import nl.mplatvoet.collections.matrix.fn.CellFunction;
 import nl.mplatvoet.collections.matrix.fn.CellMapFunction;
-import nl.mplatvoet.collections.matrix.fn.Function;
 import nl.mplatvoet.collections.matrix.range.Range;
 
 import java.util.Comparator;
@@ -39,7 +38,7 @@ public final class Matrices {
         int row = -1;
         for (C c : source) {
             ++row;
-            if(c == null) continue;
+            if (c == null) continue;
 
             int col = -1;
             for (T value : c) {
@@ -84,13 +83,19 @@ public final class Matrices {
         return IndexMutableMatrix.copyOf(matrix, range, transform);
     }
 
+
+
+    public static <T> void sortBy(MutableLine<T> line) {
+        sortBy(line, NaturalComparator.INSTANCE);
+    }
+
     public static <T> void sortBy(MutableLine<T> line, Comparator<? super T> comparator) {
         checkArgument(line == null, "line cannot be null");
         checkArgument(comparator == null, "comparator cannot be null");
 
         if (line instanceof MutableColumn) {
             sortByColumn((MutableColumn<T>) line, comparator);
-        } else if (line instanceof MutableRow){
+        } else if (line instanceof MutableRow) {
             sortByRow((MutableRow<T>) line, comparator);
         } else {
             throw new IllegalArgumentException("unknown line type: " + line);
@@ -251,4 +256,22 @@ public final class Matrices {
             return comparator.compare(first, second);
         }
     }
+
+    private static class NaturalComparator implements Comparator<Object> {
+        public static final NaturalComparator INSTANCE = new NaturalComparator();
+
+        private NaturalComparator() {
+            //hide
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public int compare(Object first, Object second) {
+            //We want CCEs if these classes don't implement Comparable
+            Comparable<Object> compFirst = (Comparable<Object>) first;
+            Comparable<Object> secondFirst = (Comparable<Object>) second;
+            return compFirst.compareTo(second);
+        }
+    }
+
 }
