@@ -68,12 +68,12 @@ public class MatrixExample {
         System.out.println();
 
         System.out.println("==Fill function==");
-        Matrix<Integer> numbers = Matrices.of(5, 5, new CellFunction<Integer, MutableCell<Integer>>() {
+        Matrix<Integer> numbers = Matrices.of(5, 5, Functions.cellFunctionOf(new ValueFunction<Integer, Integer>() {
             @Override
-            public void apply(MutableCell<Integer> cell) {
-                cell.setValue(cell.getRowIndex() + 1 + cell.getColumnIndex());
+            public Integer apply(int row, int column, Integer value) {
+                return ++row + column;
             }
-        });
+        }));
         printMatrix(numbers);
         System.out.println();
 

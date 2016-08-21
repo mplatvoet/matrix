@@ -2,7 +2,6 @@ package nl.mplatvoet.collections.matrix;
 
 
 import nl.mplatvoet.collections.matrix.fn.CellMapFunction;
-import nl.mplatvoet.collections.matrix.fn.Function;
 import nl.mplatvoet.collections.matrix.range.Range;
 
 public interface Matrix<T> {
