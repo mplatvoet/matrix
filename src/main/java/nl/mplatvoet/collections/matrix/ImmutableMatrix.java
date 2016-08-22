@@ -15,6 +15,42 @@ public class ImmutableMatrix<T> implements Matrix<T> {
     private final Iterable<Row<T>> rowsIterable;
     private final Iterable<Column<T>> columnsIterable;
 
+    private ImmutableMatrix(T[][] source) {
+        Arguments.checkArgument(source == null, "source cannot be null");
+
+        int rowSize = source.length;
+        int columnSize = maxColumn(source);
+
+        cells = new AbstractMatrixCell[rowSize][columnSize];
+
+        for (int r = 0; r < rowSize; r++) {
+            T[] values = source[r];
+            int c = 0;
+            for (; c < values.length; c++) {
+                cells[r][c] = new ValueMatrixCell<>(this, values[c], r,c);
+            }
+            for (; c < columnSize; c++) {
+                cells[r][c] = new BlankMatrixCell<>(this, r,c);
+            }
+        }
+
+        rows = new ImmutableRow[rowSize];
+        columns = new ImmutableColumn[columnSize];
+        for (int i = 0; i < rowSize; ++i) rows[i] = new ImmutableRow<>(this, i);
+        for (int i = 0; i < columnSize; ++i) columns[i] = new ImmutableColumn<>(this, i);
+
+        rowsIterable = new ArrayIterable<>(rows);
+        columnsIterable = new ArrayIterable<>(columns);
+    }
+
+    private int maxColumn(T[][] source) {
+        int max = 0;
+        for (T[] ts : source) {
+            max = Math.max(max, ts.length);
+        }
+        return max;
+    }
+
     private <S> ImmutableMatrix(Matrix<S> matrix, Range range, CellMapFunction<S, T> map) {
         Arguments.checkArgument(matrix == null, "matrix cannot be null");
         Arguments.checkArgument(range == null, "range cannot be null");
@@ -58,6 +94,10 @@ public class ImmutableMatrix<T> implements Matrix<T> {
 
     public static <T> Matrix<T> of(int rows, int columns, CellFunction<T, MutableCell<T>> fill) {
         return new ImmutableMatrix<>(rows, columns, fill);
+    }
+
+    public static <T> Matrix<T> copyOf(T[][] source) {
+        return new ImmutableMatrix<>(source);
     }
 
     @SuppressWarnings("unchecked")

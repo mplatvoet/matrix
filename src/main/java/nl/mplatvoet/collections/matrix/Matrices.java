@@ -51,6 +51,10 @@ public final class Matrices {
         return matrix;
     }
 
+    public static <T> Matrix<T> copyOf(T[][] source) {
+        return ImmutableMatrix.copyOf(source);
+    }
+
     public static <T> Matrix<T> copyOf(Matrix<T> matrix) {
         return ImmutableMatrix.copyOf(matrix);
     }
@@ -65,6 +69,10 @@ public final class Matrices {
 
     public static <T, R> Matrix<R> copyOf(Matrix<T> matrix, Range range, CellMapFunction<T, R> transform) {
         return ImmutableMatrix.copyOf(matrix, range, transform);
+    }
+
+    public static <T> MutableMatrix<T> mutableCopyOf(T[][] source) {
+        return IndexMutableMatrix.copyOf(source);
     }
 
     public static <T> MutableMatrix<T> mutableCopyOf(Matrix<T> matrix) {
@@ -82,7 +90,6 @@ public final class Matrices {
     public static <T, R> MutableMatrix<R> mutableCopyOf(Matrix<T> matrix, Range range, CellMapFunction<T, R> transform) {
         return IndexMutableMatrix.copyOf(matrix, range, transform);
     }
-
 
 
     public static <T> void sortBy(MutableLine<T> line) {

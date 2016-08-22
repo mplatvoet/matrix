@@ -23,6 +23,35 @@ public class IndexMutableMatrix<T> implements MutableMatrix<T> {
     private int maxRowIndex = -1;
     private int maxColumnIndex = -1;
 
+    private IndexMutableMatrix(T[][] source) {
+        checkArgument(source == null, "source cannot be null");
+        int rows = source.length;
+        int columns = maxColumn(source);
+
+
+        maxRowIndex = rows - 1;
+        maxColumnIndex = columns - 1;
+
+        this.rows = new IndexMap<>(rows);
+        this.columns = new IndexMap<>(columns);
+
+        for (int r = 0; r < rows; r++) {
+            T[] values = source[r];
+            for (int c = 0; c < values.length; c++) {
+                put(r,c, values[c]);
+            }
+        }
+
+    }
+
+    private int maxColumn(T[][] source) {
+        int max = 0;
+        for (T[] ts : source) {
+            max = Math.max(max, ts.length);
+        }
+        return max;
+    }
+
     @SuppressWarnings("unchecked")
     private IndexMutableMatrix(int initialRows, int initialColumns, CellMapFunction<T, T> function) {
         checkArgument(initialRows < 0, "initialRows must be >= 0, but was %s", initialRows);
@@ -66,6 +95,10 @@ public class IndexMutableMatrix<T> implements MutableMatrix<T> {
     public static <T> MutableMatrix<T> of(int rows, int columns, CellMapFunction<T, T> fill) {
         Arguments.checkArgument(fill == null, "cells function cannot be null");
         return new IndexMutableMatrix<>(rows, columns, fill);
+    }
+
+    public static <T> MutableMatrix<T> copyOf(T[][] source) {
+        return new IndexMutableMatrix<>(source);
     }
 
     @SuppressWarnings("unchecked")
