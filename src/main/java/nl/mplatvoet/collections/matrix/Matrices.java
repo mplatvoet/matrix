@@ -16,15 +16,15 @@ public final class Matrices {
     }
 
     public static <T> MutableMatrix<T> mutableOf() {
-        return IndexMutableMatrix.of();
+        return MutableArrayMatrix.of();
     }
 
     public static <T> MutableMatrix<T> mutableOf(int rows, int columns) {
-        return IndexMutableMatrix.of(rows, columns);
+        return MutableArrayMatrix.of(rows, columns);
     }
 
     public static <T> MutableMatrix<T> mutableOf(int rows, int columns, CellMapFunction<T, T> fill) {
-        return IndexMutableMatrix.of(rows, columns, fill);
+        return MutableArrayMatrix.of(rows, columns, fill);
     }
 
     public static <T> Matrix<T> of(int rows, int columns, CellFunction<T, MutableCell<T>> fill) {
@@ -72,23 +72,23 @@ public final class Matrices {
     }
 
     public static <T> MutableMatrix<T> mutableCopyOf(T[][] source) {
-        return IndexMutableMatrix.copyOf(source);
+        return MutableArrayMatrix.copyOf(source);
     }
 
     public static <T> MutableMatrix<T> mutableCopyOf(Matrix<T> matrix) {
-        return IndexMutableMatrix.copyOf(matrix);
+        return MutableArrayMatrix.copyOf(matrix);
     }
 
     public static <T> MutableMatrix<T> mutableCopyOf(Matrix<T> matrix, Range range) {
-        return IndexMutableMatrix.copyOf(matrix, range);
+        return MutableArrayMatrix.copyOf(matrix, range);
     }
 
     public static <T, R> MutableMatrix<R> mutableCopyOf(Matrix<T> matrix, CellMapFunction<T, R> transform) {
-        return IndexMutableMatrix.copyOf(matrix, transform);
+        return MutableArrayMatrix.copyOf(matrix, transform);
     }
 
     public static <T, R> MutableMatrix<R> mutableCopyOf(Matrix<T> matrix, Range range, CellMapFunction<T, R> transform) {
-        return IndexMutableMatrix.copyOf(matrix, range, transform);
+        return MutableArrayMatrix.copyOf(matrix, range, transform);
     }
 
 

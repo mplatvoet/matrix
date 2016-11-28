@@ -1,10 +1,12 @@
 package nl.mplatvoet.collections.matrix;
 
+import nl.mplatvoet.collections.map.ArrayMap;
+
 import java.util.Collection;
 
-public class IndexMapExample {
+public class ArrayMapExample {
     public static void main(String[] args) {
-        IndexMap<String> map = new IndexMap<>();
+        ArrayMap<String> map = new ArrayMap<>();
         Collection<String> values = map.values();
 
         map.put(9, "World");

@@ -1,8 +1,8 @@
-package nl.mplatvoet.collections.matrix;
+package nl.mplatvoet.collections.map;
 
 import java.util.*;
 
-public class IndexMap<V> implements Map<Integer, V> {
+public class ArrayMap<V> implements Map<Integer, V>, IntKeyMap<V> {
 
     /**
      * Some VMs reserve some header words in an array.
@@ -21,21 +21,20 @@ public class IndexMap<V> implements Map<Integer, V> {
     private KeySet keySet = null;
     private ValuesCollection valuesCollection = null;
 
-    public IndexMap() {
+    public ArrayMap() {
         this(DEFAULT_CAPACITY);
     }
 
     @SuppressWarnings("unchecked")
-    public IndexMap(int initialCapacity) {
-        if(initialCapacity < 0) {
+    public ArrayMap(int initialCapacity) {
+        if (initialCapacity < 0) {
             throw new IllegalArgumentException("initialCapacity must be >= 0");
         }
-        if(initialCapacity > MAX_ARRAY_SIZE) {
+        if (initialCapacity > MAX_ARRAY_SIZE) {
             throw new IllegalArgumentException("initialCapacity exceeds maximum capacity: " + MAX_ARRAY_SIZE);
         }
         initialCapacity = Math.max(initialCapacity, DEFAULT_CAPACITY);
         entries = new ValueEntry[initialCapacity];
-
     }
 
     @Override
@@ -52,9 +51,14 @@ public class IndexMap<V> implements Map<Integer, V> {
     public boolean containsKey(Object key) {
         if (key instanceof Integer) {
             int idx = (Integer) key;
-            return idx >= 0 && idx < entries.length && entries[idx] != null;
+            return containsKey(idx);
         }
         return false;
+    }
+
+    @Override
+    public boolean containsKey(int idx) {
+        return idx >= 0 && idx < entries.length && entries[idx] != null;
     }
 
     @Override
@@ -71,10 +75,16 @@ public class IndexMap<V> implements Map<Integer, V> {
     public V get(Object key) {
         if (key instanceof Integer) {
             int idx = (Integer) key;
-            if (idx >= 0 && idx < entries.length) {
-                ValueEntry<V> entry = entries[idx];
-                return entry == null ? null : entry.getValue();
-            }
+            return get(idx);
+        }
+        return null;
+    }
+
+    @Override
+    public V get(int idx) {
+        if (idx >= 0 && idx < entries.length) {
+            ValueEntry<V> entry = entries[idx];
+            return entry == null ? null : entry.getValue();
         }
         return null;
     }
@@ -84,10 +94,15 @@ public class IndexMap<V> implements Map<Integer, V> {
         if (key == null) {
             throw new IllegalArgumentException("key can not be null");
         }
-        if (key < 0) {
-            throw new IllegalArgumentException("key must be a positive number or 0, but was: " + key);
-        }
         int idx = key;
+        return put(idx, value);
+    }
+
+    @Override
+    public V put(int idx, V value) {
+        if (idx < 0) {
+            throw new IllegalArgumentException("key must be a positive number or 0, but was: " + idx);
+        }
         ensureCapacity(idx + 1);
 
         ValueEntry<V> previous = entries[idx];
@@ -101,6 +116,7 @@ public class IndexMap<V> implements Map<Integer, V> {
             return previous.getValue();
         }
     }
+
 
     private void ensureCapacity(int minCapacity) {
         if (minCapacity - entries.length > 0) {
@@ -120,19 +136,26 @@ public class IndexMap<V> implements Map<Integer, V> {
     public V remove(Object key) {
         if (key instanceof Integer) {
             int idx = (Integer) key;
-            if (idx >= 0 && idx < entries.length) {
-                ValueEntry<V> entry = entries[idx];
-                entries[idx] = null;
-                if (entry == null) {
-                    return null;
-                } else {
-                    --size;
-                    return entry.getValue();
-                }
+            return remove(idx);
+        }
+        return null;
+    }
+
+    @Override
+    public V remove(int idx) {
+        if (idx >= 0 && idx < entries.length) {
+            ValueEntry<V> entry = entries[idx];
+            entries[idx] = null;
+            if (entry == null) {
+                return null;
+            } else {
+                --size;
+                return entry.getValue();
             }
         }
         return null;
     }
+
 
     @Override
     public void putAll(Map<? extends Integer, ? extends V> m) {
@@ -231,7 +254,8 @@ public class IndexMap<V> implements Map<Integer, V> {
         @Override
         public boolean contains(Object o) {
 
-            for (ValueEntry<V> entry : IndexMap.this.entries) {
+            for (int i = 0, entries1Length = ArrayMap.this.entries.length; i < entries1Length; i++) {
+                ValueEntry<V> entry = ArrayMap.this.entries[i];
                 if (entry != null) {
                     V value = entry.getValue();
                     if (value == null && o == null) {
@@ -252,7 +276,7 @@ public class IndexMap<V> implements Map<Integer, V> {
 
         @Override
         public Object[] toArray() {
-            return toArray(new Object[IndexMap.this.size]);
+            return toArray(new Object[ArrayMap.this.size]);
         }
 
         @Override
@@ -265,17 +289,17 @@ public class IndexMap<V> implements Map<Integer, V> {
 
         @Override
         public int size() {
-            return IndexMap.this.size;
+            return ArrayMap.this.size;
         }
 
         @Override
         public boolean isEmpty() {
-            return IndexMap.this.isEmpty();
+            return ArrayMap.this.isEmpty();
         }
 
         @Override
         public Object[] toArray() {
-            return toArray(new Object[IndexMap.this.size]);
+            return toArray(new Object[ArrayMap.this.size]);
         }
 
         abstract T valueOf(ValueEntry<V> entry);
@@ -283,7 +307,7 @@ public class IndexMap<V> implements Map<Integer, V> {
         @Override
         @SuppressWarnings("unchecked")
         public <T> T[] toArray(T[] a) {
-            final int size = IndexMap.this.size;
+            final int size = ArrayMap.this.size;
 
 
             T[] result = a.length >= size ? a :
@@ -291,8 +315,8 @@ public class IndexMap<V> implements Map<Integer, V> {
                             .newInstance(a.getClass().getComponentType(), size);
 
             int idx = 0;
-            for (int i = 0; i < IndexMap.this.entries.length && idx < size; ++i) {
-                ValueEntry<V> entry = IndexMap.this.entries[i];
+            for (int i = 0; i < ArrayMap.this.entries.length && idx < size; ++i) {
+                ValueEntry<V> entry = ArrayMap.this.entries[i];
                 if (entry != null) {
                     result[idx] = (T) valueOf(entry);
                     ++idx;
@@ -308,7 +332,7 @@ public class IndexMap<V> implements Map<Integer, V> {
         }
 
         @Override
-        public boolean add(T integer) {
+        public boolean add(T element) {
             throw new UnsupportedOperationException();
         }
 
@@ -360,7 +384,7 @@ public class IndexMap<V> implements Map<Integer, V> {
             }
 
             Integer idx = (Integer) o; // potential CCE is according to spec
-            return idx >= 0 && idx < IndexMap.this.entries.length && IndexMap.this.entries[idx] != null;
+            return idx >= 0 && idx < ArrayMap.this.entries.length && ArrayMap.this.entries[idx] != null;
         }
 
         @Override
@@ -384,7 +408,7 @@ public class IndexMap<V> implements Map<Integer, V> {
 
         @Override
         public Object[] toArray() {
-            return toArray(new Object[IndexMap.this.size]);
+            return toArray(new Object[ArrayMap.this.size]);
         }
 
         @Override
@@ -395,7 +419,7 @@ public class IndexMap<V> implements Map<Integer, V> {
         @Override
         @SuppressWarnings("unchecked")
         public <T> T[] toArray(T[] a) {
-            final int size = IndexMap.this.size;
+            final int size = ArrayMap.this.size;
 
 
             T[] result = a.length >= size ? a :
@@ -403,8 +427,8 @@ public class IndexMap<V> implements Map<Integer, V> {
                             .newInstance(a.getClass().getComponentType(), size);
 
             int idx = 0;
-            for (int i = 0; i < IndexMap.this.entries.length && idx < size; ++i) {
-                ValueEntry<V> entry = IndexMap.this.entries[i];
+            for (int i = 0; i < ArrayMap.this.entries.length && idx < size; ++i) {
+                ValueEntry<V> entry = ArrayMap.this.entries[i];
                 if (entry != null) {
                     result[idx] = (T) entry;
                     ++idx;
@@ -421,7 +445,7 @@ public class IndexMap<V> implements Map<Integer, V> {
 
         @Override
         public boolean add(Entry<Integer, V> entry) {
-            IndexMap.this.put(entry.getKey(), entry.getValue());
+            ArrayMap.this.put(entry.getKey(), entry.getValue());
             return true;
         }
 
@@ -433,9 +457,9 @@ public class IndexMap<V> implements Map<Integer, V> {
             Entry entry = (Entry) o; // potential CCE is according to spec
             if (entry.getKey() instanceof Integer) {
                 int idx = (int) entry.getKey();
-                if (idx >= 0 && idx < IndexMap.this.entries.length) {
-                    if (entry.equals(IndexMap.this.entries[idx])) {
-                        IndexMap.this.remove(idx);
+                if (idx >= 0 && idx < ArrayMap.this.entries.length) {
+                    if (entry.equals(ArrayMap.this.entries[idx])) {
+                        ArrayMap.this.remove(idx);
                         return true;
                     }
                 }
@@ -477,15 +501,16 @@ public class IndexMap<V> implements Map<Integer, V> {
                 throw new NullPointerException(); // according to spec
             }
             if (c.isEmpty()) {
-                int size = IndexMap.this.size;
-                IndexMap.this.clear();
+                int size = ArrayMap.this.size;
+                ArrayMap.this.clear();
                 return size > 0;
             }
 
             boolean modified = false;
-            for (ValueEntry<V> entry : IndexMap.this.entries) {
+            for (int i = 0, length = ArrayMap.this.entries.length; i < length; i++) {
+                ValueEntry<V> entry = ArrayMap.this.entries[i];
                 if (entry != null && !c.contains(entry)) {
-                    IndexMap.this.remove(entry.getKey());
+                    ArrayMap.this.remove(entry.getKey());
                     modified = true;
                 }
             }
@@ -516,8 +541,8 @@ public class IndexMap<V> implements Map<Integer, V> {
             Entry entry = (Entry) o; // potential CCE is according to spec
             if (entry.getKey() instanceof Integer) {
                 int idx = (int) entry.getKey();
-                if (idx >= 0 && idx < IndexMap.this.entries.length) {
-                    return entry.equals(IndexMap.this.entries[idx]);
+                if (idx >= 0 && idx < ArrayMap.this.entries.length) {
+                    return entry.equals(ArrayMap.this.entries[idx]);
                 }
             }
             return false;
@@ -536,16 +561,15 @@ public class IndexMap<V> implements Map<Integer, V> {
                 return false;
             try {
                 return containsAll(c);
-            } catch (ClassCastException unused) {
-                return false;
-            } catch (NullPointerException unused) {
+            } catch (ClassCastException | NullPointerException unused) {
                 return false;
             }
         }
 
         public int hashCode() {
             int h = 0;
-            for (ValueEntry<V> entry : IndexMap.this.entries) {
+            for (int i = 0, length = ArrayMap.this.entries.length; i < length; i++) {
+                ValueEntry<V> entry = ArrayMap.this.entries[i];
                 if (entry != null) {
                     h += entry.hashCode();
                 }
@@ -555,7 +579,7 @@ public class IndexMap<V> implements Map<Integer, V> {
 
         @Override
         public void clear() {
-            IndexMap.this.clear();
+            ArrayMap.this.clear();
         }
     }
 
@@ -596,8 +620,8 @@ public class IndexMap<V> implements Map<Integer, V> {
 
         @Override
         public boolean hasNext() {
-            for (int i = index + 1; i < IndexMap.this.entries.length; ++i) {
-                if (IndexMap.this.entries[i] != null) return true;
+            for (int i = index + 1; i < ArrayMap.this.entries.length; ++i) {
+                if (ArrayMap.this.entries[i] != null) return true;
             }
             return false;
         }
@@ -606,8 +630,8 @@ public class IndexMap<V> implements Map<Integer, V> {
 
         @Override
         public T next() {
-            for (int i = index + 1; i < IndexMap.this.entries.length; ++i) {
-                ValueEntry<V> entry = IndexMap.this.entries[i];
+            for (int i = index + 1; i < ArrayMap.this.entries.length; ++i) {
+                ValueEntry<V> entry = ArrayMap.this.entries[i];
                 if (entry != null) {
                     removed = false;
                     index = i;
@@ -625,7 +649,7 @@ public class IndexMap<V> implements Map<Integer, V> {
             if (removed) {
                 throw new IllegalStateException("remove() has already been called");
             }
-            IndexMap.this.remove(index);
+            ArrayMap.this.remove(index);
             removed = true;
         }
     }
