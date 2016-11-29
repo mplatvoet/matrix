@@ -2,6 +2,7 @@ package nl.mplatvoet.collections.matrix;
 
 import nl.mplatvoet.collections.map.ArrayMap;
 import nl.mplatvoet.collections.map.IntKeyMap;
+import nl.mplatvoet.collections.map.ObjectArrayMap;
 import nl.mplatvoet.collections.matrix.args.Arguments;
 import nl.mplatvoet.collections.matrix.fn.CellMapFunction;
 import nl.mplatvoet.collections.matrix.fn.DetachedCell;
@@ -34,8 +35,8 @@ public class MutableArrayMatrix<T> implements MutableMatrix<T> {
         maxRowIndex = rows - 1;
         maxColumnIndex = columns - 1;
 
-        this.rows = new ArrayMap<>(rows);
-        this.columns = new ArrayMap<>(columns);
+        this.rows = new ObjectArrayMap<>(rows);
+        this.columns = new ObjectArrayMap<>(columns);
 
         for (int r = 0; r < rows; r++) {
             T[] values = source[r];
