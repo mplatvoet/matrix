@@ -2,7 +2,7 @@ package nl.mplatvoet.collections.map;
 
 import java.util.*;
 
-public class ArrayMap<V> implements Map<Integer, V>, IntKeyMap<V> {
+public class ArrayMap<V> implements IntKeyMap<V> {
 
     /**
      * Some VMs reserve some header words in an array.
@@ -46,6 +46,9 @@ public class ArrayMap<V> implements Map<Integer, V>, IntKeyMap<V> {
     private V unmask(Object value) {
         if (value == NULL_MARKER) {
             return null;
+        }
+        if (value instanceof ArrayMap.KeyEntry) {
+            return ((ArrayMap<V>.KeyEntry) value).getValue();
         }
         return (V) value;
     }
@@ -203,12 +206,13 @@ public class ArrayMap<V> implements Map<Integer, V>, IntKeyMap<V> {
         return entrySet;
     }
 
-
     private class KeyEntry implements Map.Entry<Integer, V> {
         private final int key;
+        private V value;
 
-        private KeyEntry(int key) {
+        private KeyEntry(int key, V value) {
             this.key = key;
+            this.value = value;
         }
 
         @Override
@@ -218,12 +222,14 @@ public class ArrayMap<V> implements Map<Integer, V>, IntKeyMap<V> {
 
         @Override
         public V getValue() {
-            return get(key);
+            return value;
         }
 
         @Override
         public V setValue(V value) {
-            return put(key, value);
+            V current = this.value;
+            this.value = value;
+            return current;
         }
 
         @Override
@@ -232,7 +238,6 @@ public class ArrayMap<V> implements Map<Integer, V>, IntKeyMap<V> {
                 Entry entry = (Entry) other;
                 if (((Integer) this.key).equals(entry.getKey())) {
                     Object otherValue = entry.getValue();
-                    V value = getValue();
                     return (value == null && otherValue == null) ||
                             (value != null && value.equals(otherValue));
                 }
@@ -242,7 +247,6 @@ public class ArrayMap<V> implements Map<Integer, V>, IntKeyMap<V> {
 
         @Override
         public int hashCode() {
-            V value = getValue();
             return ((Integer) key).hashCode() ^ (value == null ? 0 : value.hashCode());
         }
     }
@@ -398,12 +402,19 @@ public class ArrayMap<V> implements Map<Integer, V>, IntKeyMap<V> {
 
         @Override
         Entry<Integer, V> valueOf(int key, V value) {
-            return getEntry(key);
+            return getEntry(key, value);
         }
 
-        private Entry<Integer, V> getEntry(int idx) {
-            //TODO cache values, tricky bit is remove
-            return new KeyEntry(idx);
+        @SuppressWarnings("unchecked")
+        private Entry<Integer, V> getEntry(int idx, Object currentEntry) {
+            Object entry = ArrayMap.this.entries[idx];
+            if (entry instanceof ArrayMap.KeyEntry) {
+                return (Entry<Integer, V>) entry;
+            }
+            V value = currentEntry == NULL_MARKER ? null : (V) entry;
+            final KeyEntry keyEntry = new KeyEntry(idx, value);
+            ArrayMap.this.entries[idx] = keyEntry;
+            return keyEntry;
         }
 
         @Override
@@ -421,7 +432,7 @@ public class ArrayMap<V> implements Map<Integer, V>, IntKeyMap<V> {
             for (int key = 0; key < entries.length && idx < size; ++key) {
                 Object entry = entries[key];
                 if (entry != null) {
-                    result[idx] = (E) getEntry(key);
+                    result[idx] = (E) getEntry(key, entry);
                     ++idx;
                 }
             }
@@ -483,8 +494,8 @@ public class ArrayMap<V> implements Map<Integer, V>, IntKeyMap<V> {
             boolean modified = false;
             Object[] entries = ArrayMap.this.entries;
             for (int i = 0, length = entries.length; i < length; i++) {
-                V value = unmask(entries[i]);
-                if (value != null && !c.contains(getEntry(i))) {
+                Object entry = entries[i];
+                if (entry != null && !c.contains(getEntry(i, entry))) {
                     ArrayMap.this.remove(i);
                     modified = true;
                 }
@@ -547,7 +558,7 @@ public class ArrayMap<V> implements Map<Integer, V>, IntKeyMap<V> {
             for (int i = 0, length = entries.length; i < length; i++) {
                 Object entry = entries[i];
                 if (entry != null) {
-                    h += getEntry(i).hashCode();
+                    h += getEntry(i, entry).hashCode();
                 }
             }
             return h;
@@ -561,7 +572,7 @@ public class ArrayMap<V> implements Map<Integer, V>, IntKeyMap<V> {
         private class ArrayIterator extends AbstractArrayIterator<Entry<Integer, V>> {
             @Override
             Entry<Integer, V> valueOf(int key, V value) {
-                return getEntry(key);
+                return getEntry(key, value);
             }
         }
     }

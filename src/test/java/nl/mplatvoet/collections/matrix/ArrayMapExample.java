@@ -3,6 +3,7 @@ package nl.mplatvoet.collections.matrix;
 import nl.mplatvoet.collections.map.ArrayMap;
 
 import java.util.Collection;
+import java.util.Map;
 
 public class ArrayMapExample {
     public static void main(String[] args) {
@@ -22,6 +23,11 @@ public class ArrayMapExample {
         map.remove(4);
         map.remove(9);
         map.put(5, "Mark");
+        printValues(values);
+
+        final Map.Entry<Integer, String> entry = map.entrySet().iterator().next();
+        entry.setValue("Bye");
+
         printValues(values);
 
     }

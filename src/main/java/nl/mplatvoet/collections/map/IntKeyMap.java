@@ -1,8 +1,9 @@
 package nl.mplatvoet.collections.map;
 
-public interface IntKeyMap<V> {
 
-    int size();
+import java.util.Map;
+
+public interface IntKeyMap<V> extends Map<Integer, V> {
 
     boolean containsKey(int idx);
 
