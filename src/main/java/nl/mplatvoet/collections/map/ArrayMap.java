@@ -1,8 +1,10 @@
 package nl.mplatvoet.collections.map;
 
+import java.io.IOException;
+import java.io.Serializable;
 import java.util.*;
 
-public class ArrayMap<V> implements IntKeyMap<V> {
+public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
 
     /**
      * Some VMs reserve some header words in an array.
@@ -14,13 +16,12 @@ public class ArrayMap<V> implements IntKeyMap<V> {
     private static final int DEFAULT_CAPACITY = 10;
     private static final Object NULL_MARKER = new Object();
 
-    private Object[] entries;
+    private transient Object[] entries;
+    private transient int size = 0;
 
-    private int size = 0;
-
-    private EntrySet entrySet = null;
-    private KeySet keySet = null;
-    private ValuesCollection valuesCollection = null;
+    private transient EntrySet entrySet = null;
+    private transient KeySet keySet = null;
+    private transient ValuesCollection valuesCollection = null;
 
     public ArrayMap() {
         this(DEFAULT_CAPACITY);
@@ -204,6 +205,96 @@ public class ArrayMap<V> implements IntKeyMap<V> {
             entrySet = new EntrySet();
         }
         return entrySet;
+    }
+
+    private int maxSetIndex(Object[] entries) {
+        for (int i = entries.length - 1; i >= 0; --i) {
+            if (entries[i] != null) return i;
+        }
+        return -1;
+    }
+
+    private void writeObject(java.io.ObjectOutputStream s) throws IOException {
+        final int size = this.size;
+        s.defaultWriteObject();
+        s.writeInt(size);
+
+        if (size > 0) {
+            final Object[] entries = this.entries;
+            final int requiredCapacity = maxSetIndex(entries) + 1;
+
+            s.writeInt(requiredCapacity);
+
+            int written = 0;
+            for (int i = 0; i < entries.length && written < size; ++i) {
+                final Object entry = entries[i];
+                if (entry == null) continue;
+                final V unmasked = unmask(entry);
+                if (unmasked == null) {
+                    s.writeInt(i == 0 ? Integer.MIN_VALUE : -i);
+                } else {
+                    s.writeInt(i);
+                    s.writeObject(unmasked);
+                }
+                ++written;
+            }
+        }
+    }
+
+
+    private void readObject(java.io.ObjectInputStream s)
+            throws IOException, ClassNotFoundException {
+        s.defaultReadObject();
+        final int size = s.readInt();
+        if (size == 0) {
+            this.entries = new Object[DEFAULT_CAPACITY];
+        } else {
+            final int requiredCapacity = s.readInt();
+            this.size = size;
+            this.entries = new Object[requiredCapacity];
+
+            for (int i = 0; i < size; i++) {
+                final int idx = s.readInt();
+                if (idx < 0) {
+                    entries[idx == Integer.MIN_VALUE ? 0 : -idx] = NULL_MARKER;
+                } else {
+                    @SuppressWarnings("unchecked")
+                    final V value = (V) s.readObject(); //cast to (V) to force ClassCastException
+                    entries[idx] = value;
+                }
+            }
+        }
+    }
+
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public Object clone() {
+        ArrayMap<V> result;
+        try {
+            result = (ArrayMap<V>) super.clone();
+        } catch (CloneNotSupportedException e) {
+            // this shouldn't happen, since we are Cloneable
+            throw new InternalError(e);
+        }
+
+        result.size = this.size;
+        Object[] src = this.entries;
+        result.entries = new Object[maxSetIndex(src) +1];
+
+
+        int cloned = 0;
+        for (int i = 0; i < src.length && cloned < size; ++i) {
+            final Object entry = src[i];
+            if (entry == null) continue;
+
+            //mask(unmask(entry)) will unwrap any Entry instance
+            result.entries[i] = mask(unmask(entry));
+
+            ++cloned;
+        }
+
+        return result;
     }
 
     private class KeyEntry implements Map.Entry<Integer, V> {
