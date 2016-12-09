@@ -6,6 +6,7 @@ import nl.mplatvoet.collections.matrix.range.Range;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.function.Function;
 
 public class ImmutableMatrix<T> implements Matrix<T> {
     private final AbstractMatrixCell[][] cells;
@@ -73,7 +74,7 @@ public class ImmutableMatrix<T> implements Matrix<T> {
         columnsIterable = new ArrayIterable<>(columns);
     }
 
-    private ImmutableMatrix(int rows, int columns, CellFunction<T, MutableCell<T>> fill) {
+    private ImmutableMatrix(int rows, int columns, Function<MutableCell<T>, T> fill) {
         Arguments.checkArgument(rows < 0, "row must be >= 0 but was %s", rows);
         Arguments.checkArgument(columns < 0, "row must be >= 0 but was %s", columns);
         Arguments.checkArgument(fill == null, "cells function cannot be null");
@@ -92,7 +93,7 @@ public class ImmutableMatrix<T> implements Matrix<T> {
         columnsIterable = new ArrayIterable<>(this.columns);
     }
 
-    public static <T> Matrix<T> of(int rows, int columns, CellFunction<T, MutableCell<T>> fill) {
+    public static <T> Matrix<T> of(int rows, int columns, Function<MutableCell<T>, T> fill) {
         return new ImmutableMatrix<>(rows, columns, fill);
     }
 
@@ -148,7 +149,7 @@ public class ImmutableMatrix<T> implements Matrix<T> {
     }
 
 
-    private void fillCells(CellFunction<T, MutableCell<T>> fn) {
+    private void fillCells(Function<MutableCell<T>, T> fn) {
         DetachedCell<T> cell = new DetachedCell<>();
         for (int r = 0; r < cells.length; ++r) {
             for (int c = 0; c < cells[r].length; ++c) {

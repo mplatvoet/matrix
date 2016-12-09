@@ -46,14 +46,6 @@ public class MutableArrayMatrix<T> implements MutableMatrix<T> {
 
     }
 
-    private int maxColumn(T[][] source) {
-        int max = 0;
-        for (T[] ts : source) {
-            max = Math.max(max, ts.length);
-        }
-        return max;
-    }
-
     @SuppressWarnings("unchecked")
     private MutableArrayMatrix(int initialRows, int initialColumns, CellMapFunction<T, T> function) {
         checkArgument(initialRows < 0, "initialRows must be >= 0, but was %s", initialRows);
@@ -123,6 +115,14 @@ public class MutableArrayMatrix<T> implements MutableMatrix<T> {
         //TODO check if range is empty and return a special empty matrix
 
         return new MutableArrayMatrix<>(matrix, range, transform);
+    }
+
+    private int maxColumn(T[][] source) {
+        int max = 0;
+        for (T[] ts : source) {
+            max = Math.max(max, ts.length);
+        }
+        return max;
     }
 
     private <S> void fillCells(Matrix<S> source, Range range, CellMapFunction<S, T> map) {
@@ -847,7 +847,7 @@ public class MutableArrayMatrix<T> implements MutableMatrix<T> {
         }
 
         private IndexMatrixCell(MutableArrayMatrix<T> matrix, int rowIndex, int columnIndex) {
-            this(matrix, rowIndex, columnIndex, IndexMatrixCell.<T>blank());
+            this(matrix, rowIndex, columnIndex, IndexMatrixCell.blank());
         }
 
         @SuppressWarnings("unchecked")
@@ -880,9 +880,11 @@ public class MutableArrayMatrix<T> implements MutableMatrix<T> {
         }
 
         @Override
-        public void setValue(T value) {
+        public T setValue(T value) {
             assertState();
+            T prev = this.value;
             this.value = value;
+            return prev;
         }
 
         @Override

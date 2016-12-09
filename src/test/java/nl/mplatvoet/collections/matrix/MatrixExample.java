@@ -5,6 +5,7 @@ import nl.mplatvoet.collections.matrix.fn.*;
 import nl.mplatvoet.collections.matrix.range.Range;
 
 import java.util.Iterator;
+import java.util.function.Function;
 
 import static nl.mplatvoet.collections.matrix.ExampleUtil.printMatrix;
 import static nl.mplatvoet.collections.matrix.ExampleUtil.randomMatrix;
@@ -68,22 +69,12 @@ public class MatrixExample {
         System.out.println();
 
         System.out.println("==Fill function==");
-        Matrix<Integer> numbers = Matrices.of(5, 5, Functions.cellFunctionOf(new ValueFunction<Integer, Integer>() {
-            @Override
-            public Integer apply(int row, int column, Integer value) {
-                return ++row + column;
-            }
-        }));
+        Matrix<Integer> numbers = Matrices.of(5, 5, cell -> cell.setValue(cell.getRowIndex() + cell.getColumnIndex() + 1));
         printMatrix(numbers);
         System.out.println();
 
         System.out.println("==Map function==");
-        Matrix<String> strings = numbers.map(new CellMapFunction<Integer, String>() {
-            @Override
-            public void apply(MatrixCell<Integer> source, MutableCell<String> dest) {
-                dest.setValue("<" + source.getValue() + ">");
-            }
-        });
+        Matrix<String> strings = numbers.map((source, dest) -> dest.setValue("<" + source.getValue() + ">"));
         printMatrix(strings);
     }
 

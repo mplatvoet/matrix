@@ -1,23 +1,20 @@
 package nl.mplatvoet.collections.matrix;
 
-import nl.mplatvoet.collections.matrix.fn.CellFunction;
 
 import java.util.Random;
 
-public class ExampleUtil {
-    public static Matrix<String> randomMatrix(int rows, int columns) {
-        return Matrices.of(rows, columns, new CellFunction<String, MutableCell<String>>() {
-            private final  Random random = new Random();
-            @Override
-            public void apply(MutableCell<String> cell) {
-                if (random.nextInt(3) == 0) {
-                    cell.setValue("*");
-                }
+class ExampleUtil {
+    private static final  Random RANDOM = new Random();
+    static Matrix<String> randomMatrix(int rows, int columns) {
+        return Matrices.of(rows, columns, cell -> {
+            if (RANDOM.nextInt(3) == 0) {
+                cell.setValue("*");
             }
+            return null;
         });
     }
 
-    public static void printMatrix(Matrix<?> matrix) {
+    static void printMatrix(Matrix<?> matrix) {
         for (Row<?> row : matrix.rows()) {
             for (Object value : row) {
                 System.out.print(value == null ? " " : value);

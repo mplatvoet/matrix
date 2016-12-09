@@ -1,29 +1,26 @@
 package nl.mplatvoet.collections.matrix.fn;
 
-import nl.mplatvoet.collections.matrix.Cell;
 import nl.mplatvoet.collections.matrix.MatrixCell;
 import nl.mplatvoet.collections.matrix.MutableCell;
-import nl.mplatvoet.collections.matrix.args.Arguments;
+
+import java.util.function.Function;
 
 import static nl.mplatvoet.collections.matrix.args.Arguments.checkArgument;
 
 public class Functions {
 
-    private static final CellMapFunction<Object, Object> PASS_TROUGH_FUNCTION = new CellMapFunction<Object, Object>() {
-        @Override
-        public void apply(MatrixCell<Object> source, MutableCell<Object> dest) {
-            if (!source.isBlank()) {
-                dest.setValue(source.getValue());
-            }
+    private static final CellMapFunction<Object, Object> PASS_TROUGH_FUNCTION = (source, dest) -> {
+        if (!source.isBlank()) {
+            dest.setValue(source.getValue());
         }
     };
 
-    public static <T, C extends MutableCell<T>> CellFunction<T, C> cellFunctionOf(ValueFunction<T, T> valueFunction) {
-        return new ValueFunctionCellFunction<>(valueFunction);
+    public static <T, C extends MutableCell<T>> Function<C, T> cellFunctionOf(Function<T, T> valueFunction) {
+        return new ValueFunction<>(valueFunction);
     }
 
-    public static <S, D> CellMapFunction<S, D> cellMapFunctionOf(ValueFunction<S, D> valueFunction) {
-        return new ValueFunctionCellMapFunction(valueFunction);
+    public static <S, D> CellMapFunction<S, D> cellMapFunctionOf(Function<S, D> valueFunction) {
+        return new ValueFunctionCellMapFunction<>(valueFunction);
     }
 
     @SuppressWarnings("unchecked")
@@ -59,32 +56,33 @@ public class Functions {
     }
 
     private static class ValueFunctionCellMapFunction<T, R> implements CellMapFunction<T, R> {
-        private final ValueFunction<T, R> valueFunction;
+        private final Function<T, R> function;
 
-        private ValueFunctionCellMapFunction(ValueFunction<T, R> valueFunction) {
-            checkArgument(valueFunction == null, "valueFunction cannot be null");
-            this.valueFunction = valueFunction;
+        private ValueFunctionCellMapFunction(Function<T, R> function) {
+            checkArgument(function == null, "function cannot be null");
+            this.function = function;
         }
 
         @Override
         public void apply(MatrixCell<T> source, MutableCell<R> dest) {
-            R result = valueFunction.apply(source.getRowIndex(), source.getColumnIndex(), source.getValue());
+            R result = function.apply(source.getValue());
             dest.setValue(result);
         }
     }
 
-    private static class ValueFunctionCellFunction<T, C extends MutableCell<T>> implements CellFunction<T, C> {
-        private final ValueFunction<T, T> valueFunction;
+    private static class ValueFunction<T, C extends MutableCell<T>> implements Function<C, T> {
+        private final Function<T, T> function;
 
-        private ValueFunctionCellFunction(ValueFunction<T, T> valueFunction) {
-            checkArgument(valueFunction == null, "valueFunction cannot be null");
-            this.valueFunction = valueFunction;
+        private ValueFunction(Function<T, T> valueFunction) {
+            checkArgument(valueFunction == null, "function cannot be null");
+            this.function = valueFunction;
         }
 
         @Override
-        public void apply(C cell) {
-            T result = valueFunction.apply(cell.getRowIndex(), cell.getColumnIndex(), cell.getValue());
+        public T apply(C cell) {
+            T result = function.apply(cell.getValue());
             cell.setValue(result);
+            return result;
         }
     }
 }

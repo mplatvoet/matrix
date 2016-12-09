@@ -1,11 +1,11 @@
 package nl.mplatvoet.collections.matrix;
 
-import nl.mplatvoet.collections.matrix.fn.CellFunction;
 import nl.mplatvoet.collections.matrix.fn.CellMapFunction;
 import nl.mplatvoet.collections.matrix.range.Range;
 
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.function.Function;
 
 import static nl.mplatvoet.collections.matrix.args.Arguments.checkArgument;
 
@@ -27,7 +27,7 @@ public final class Matrices {
         return MutableArrayMatrix.of(rows, columns, fill);
     }
 
-    public static <T> Matrix<T> of(int rows, int columns, CellFunction<T, MutableCell<T>> fill) {
+    public static <T> Matrix<T> of(int rows, int columns, Function<MutableCell<T>, T> fill) {
         return ImmutableMatrix.of(rows, columns, fill);
     }
 

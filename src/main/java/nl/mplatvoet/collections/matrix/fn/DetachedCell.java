@@ -1,10 +1,6 @@
 package nl.mplatvoet.collections.matrix.fn;
 
-import nl.mplatvoet.collections.matrix.Cell;
 import nl.mplatvoet.collections.matrix.MutableCell;
-import nl.mplatvoet.collections.matrix.args.Arguments;
-
-import static nl.mplatvoet.collections.matrix.args.Arguments.checkArgument;
 
 public final class DetachedCell<T> implements MutableCell<T> {
     private static final Object BLANK = new Object();
@@ -44,36 +40,25 @@ public final class DetachedCell<T> implements MutableCell<T> {
         return rowIndex;
     }
 
-    public void setRowIndex(int rowIndex) {
-        this.rowIndex = rowIndex;
-    }
-
-    public void setColumnIndex(int columnIndex) {
-        this.columnIndex = columnIndex;
-    }
-
     @Override
     public boolean isBlank() {
         return value == BLANK;
     }
 
     @Override
-    public void setValue(T value) {
+    public T setValue(T value) {
+        T prev = this.value;
         this.value = value;
+        return prev == BLANK ? null : prev;
     }
 
     public void apply(int row, int column) {
-        apply(row, column, DetachedCell.<T>blank());
+        apply(row, column, DetachedCell.blank());
     }
 
     public void apply(int row, int column, T value) {
         this.value = value;
         rowIndex = row;
         columnIndex = column;
-    }
-
-    public void apply(Cell<? extends T> cell) {
-        checkArgument(cell == null, "cell cannot be null");
-        apply(cell.getRowIndex(), cell.getColumnIndex(), cell.getValue());
     }
 }
