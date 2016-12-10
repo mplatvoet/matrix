@@ -19,7 +19,7 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
     private transient Object[] entries;
     private transient int size = 0;
 
-    transient int modCount = 0;
+    private transient int modCount = 0;
 
     private transient EntrySet entrySet = null;
     private transient KeySet keySet = null;
