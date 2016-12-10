@@ -46,6 +46,7 @@ public class ArrayMapTest {
                         MapFeature.RESTRICTS_KEYS,
                         MapFeature.SUPPORTS_PUT,
                         MapFeature.SUPPORTS_REMOVE,
+                        MapFeature.FAILS_FAST_ON_CONCURRENT_MODIFICATION,
                         CollectionFeature.SUPPORTS_ITERATOR_REMOVE
 
                 )

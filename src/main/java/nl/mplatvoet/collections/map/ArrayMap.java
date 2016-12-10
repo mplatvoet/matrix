@@ -19,6 +19,8 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
     private transient Object[] entries;
     private transient int size = 0;
 
+    transient int modCount = 0;
+
     private transient EntrySet entrySet = null;
     private transient KeySet keySet = null;
     private transient ValuesCollection valuesCollection = null;
@@ -131,6 +133,7 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
 
         Object previous = entries[idx];
         entries[idx] = mask(value);
+        ++modCount;
         if (previous == null) {
             ++size;
             return null;
@@ -174,6 +177,7 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
             entries[idx] = null;
             if (entry != null) {
                 --size;
+                ++modCount;
             }
             return unmask(entry);
         }
@@ -194,6 +198,7 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
     public void clear() {
         Arrays.fill(entries, null);
         size = 0;
+        ++modCount;
     }
 
     @Override
@@ -824,6 +829,11 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
     private abstract class AbstractArrayIterator<T> implements Iterator<T> {
         private int index = -1;
         private boolean removed = false;
+        private int expectedModCount;
+
+        AbstractArrayIterator() {
+            expectedModCount = modCount;
+        }
 
         @Override
         public boolean hasNext() {
@@ -838,13 +848,18 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
 
         @Override
         public T next() {
+            if (modCount != expectedModCount) {
+                throw new ConcurrentModificationException();
+            }
             Object[] entries = ArrayMap.this.entries;
             for (int i = index + 1; i < entries.length; ++i) {
                 Object entry = entries[i];
                 if (entry != null) {
                     removed = false;
                     index = i;
-                    return valueOf(i, unmask(entry));
+                    T value = valueOf(i, unmask(entry));
+
+                    return value;
                 }
             }
             throw new NoSuchElementException();
@@ -855,10 +870,14 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
             if (index < 0) {
                 throw new IllegalStateException("next() has not been called");
             }
+            if (modCount != expectedModCount) {
+                throw new ConcurrentModificationException();
+            }
             if (removed) {
                 throw new IllegalStateException("remove() has already been called");
             }
             ArrayMap.this.remove(index);
+            expectedModCount = modCount;
             removed = true;
         }
     }
