@@ -9,4 +9,7 @@ repositories {
 
 dependencies {
     testCompile 'org.apache.commons:commons-lang3:3.5'
+    testCompile 'com.google.guava:guava-testlib:20.0'
+    testCompile 'junit:junit:4.12'
+
 }

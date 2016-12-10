@@ -110,7 +110,7 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
     @Override
     public V put(Integer key, V value) {
         if (key == null) {
-            throw new IllegalArgumentException("key can not be null");
+            throw new NullPointerException("key can not be null");
         }
         int idx = key;
         return put(idx, value);
@@ -450,7 +450,7 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
 
         @Override
         public void clear() {
-            throw new UnsupportedOperationException();
+            ArrayMap.this.clear();
         }
     }
 
@@ -531,6 +531,15 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
 
             return result;
 
+        }
+
+        @Override
+        public boolean add(Entry<Integer, V> entry) {
+            if (entry == null) {
+                throw new NullPointerException();
+            }
+            ArrayMap.this.put(entry.getKey(), entry.getValue());
+            return true;
         }
 
         @Override
@@ -650,11 +659,6 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
                 }
             }
             return h;
-        }
-
-        @Override
-        public void clear() {
-            ArrayMap.this.clear();
         }
 
         private class ArrayIterator extends AbstractArrayIterator<Entry<Integer, V>> {
