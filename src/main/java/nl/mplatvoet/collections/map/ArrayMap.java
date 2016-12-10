@@ -787,7 +787,10 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
                 int idx = (int) entry.getKey();
                 if (idx >= 0 && idx < ArrayMap.this.entries.length) {
                     Object value = entry.getValue();
-                    V thisValue = unmask(ArrayMap.this.entries[idx]);
+                    Object rawEntry = ArrayMap.this.entries[idx];
+                    if (rawEntry == null) return false;
+
+                    V thisValue = unmask(rawEntry);
                     if(thisValue == null && value == null) return true;
                     //
                     return value != null && value.equals(thisValue);
@@ -809,22 +812,12 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
         Integer valueOf(int key, V value) {
             return key;
         }
-
-        @Override
-        public void remove() {
-            throw new UnsupportedOperationException();
-        }
     }
 
     private class ValuesIterator extends AbstractArrayIterator<V> {
         @Override
         V valueOf(int key, V value) {
             return value;
-        }
-
-        @Override
-        public void remove() {
-            throw new UnsupportedOperationException();
         }
     }
 

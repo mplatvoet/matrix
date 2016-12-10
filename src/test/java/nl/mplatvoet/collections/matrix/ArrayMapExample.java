@@ -8,6 +8,7 @@ import java.util.Map;
 public class ArrayMapExample {
     public static void main(String[] args) {
         ArrayMap<String> map = new ArrayMap<>();
+
         Collection<String> values = map.values();
 
         map.put(9, "World");

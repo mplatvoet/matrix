@@ -8,6 +8,7 @@ import com.google.common.collect.testing.TestMapGenerator;
 import com.google.common.collect.testing.features.CollectionFeature;
 import com.google.common.collect.testing.features.CollectionSize;
 import com.google.common.collect.testing.features.MapFeature;
+import com.google.common.collect.testing.features.SetFeature;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
@@ -38,13 +39,14 @@ public class ArrayMapTest {
                 .using(new DefaultTestMapGenerator())
                 .named("ArrayMapTests")
                 .withFeatures(
-                        CollectionSize.ONE,
+                        CollectionSize.ANY,
                         MapFeature.SUPPORTS_REMOVE,
                         MapFeature.ALLOWS_NULL_VALUE_QUERIES,
                         MapFeature.ALLOWS_NULL_VALUES,
                         MapFeature.RESTRICTS_KEYS,
                         MapFeature.SUPPORTS_PUT,
-                        MapFeature.SUPPORTS_REMOVE
+                        MapFeature.SUPPORTS_REMOVE,
+                        CollectionFeature.SUPPORTS_ITERATOR_REMOVE
 
                 )
                 .createTestSuite();
