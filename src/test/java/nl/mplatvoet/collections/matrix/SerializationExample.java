@@ -9,7 +9,8 @@ public class SerializationExample {
 
     public static void main(String[] args) {
         ArrayMap<String> source = new ArrayMap<>();
-        source.put(0, null);
+        source.put(2, null);
+        source.put(1, null);
         source.put(100, "Hello");
         source.put(1000, "World");
         source.remove(1000);

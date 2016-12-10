@@ -258,9 +258,7 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
                 if (idx < 0) {
                     entries[idx == Integer.MIN_VALUE ? 0 : -idx] = NULL_MARKER;
                 } else {
-                    @SuppressWarnings("unchecked")
-                    final V value = (V) s.readObject(); //cast to (V) to force ClassCastException
-                    entries[idx] = value;
+                    entries[idx] = s.readObject();
                 }
             }
         }
@@ -498,11 +496,10 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
 
         @SuppressWarnings("unchecked")
         private Entry<Integer, V> getEntry(int idx, Object currentEntry) {
-            Object entry = ArrayMap.this.entries[idx];
-            if (entry instanceof ArrayMap.KeyEntry) {
-                return (Entry<Integer, V>) entry;
+            if (currentEntry instanceof ArrayMap.KeyEntry) {
+                return (Entry<Integer, V>) currentEntry;
             }
-            V value = currentEntry == NULL_MARKER ? null : (V) entry;
+            V value = currentEntry == NULL_MARKER ? null : (V) currentEntry;
             final KeyEntry keyEntry = new KeyEntry(idx, value);
             ArrayMap.this.entries[idx] = keyEntry;
             return keyEntry;
