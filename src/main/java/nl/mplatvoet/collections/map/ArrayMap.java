@@ -295,6 +295,62 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
         return result;
     }
 
+    public boolean equals(Object o) {
+        if (o == this)
+            return true;
+
+        if (!(o instanceof Map))
+            return false;
+        Map<?,?> m = (Map<?,?>) o;
+        if (m.size() != size())
+            return false;
+
+        try {
+            for (Entry<Integer, V> e : entrySet()) {
+                int key = e.getKey();
+                V value = e.getValue();
+                if (value == null) {
+                    if (!(m.get(key) == null && m.containsKey(key)))
+                        return false;
+                } else {
+                    if (!value.equals(m.get(key)))
+                        return false;
+                }
+            }
+        } catch (ClassCastException | NullPointerException unused) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public int hashCode() {
+        int h = 0;
+        for (Entry<Integer, V> integerVEntry : entrySet()) h += integerVEntry.hashCode();
+        return h;
+    }
+
+    public String toString() {
+        Iterator<Entry<Integer,V>> i = entrySet().iterator();
+        if (! i.hasNext())
+            return "{}";
+
+        StringBuilder sb = new StringBuilder();
+        sb.append('{');
+        for (;;) {
+            Entry<Integer,V> e = i.next();
+            int key = e.getKey();
+            V value = e.getValue();
+            sb.append(key);
+            sb.append('=');
+            sb.append(value == this ? "(this Map)" : value);
+            if (! i.hasNext())
+                return sb.append('}').toString();
+            sb.append(',').append(' ');
+        }
+    }
+
+
     private class KeyEntry implements Map.Entry<Integer, V> {
         private final int key;
         private V value;
