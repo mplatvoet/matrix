@@ -82,8 +82,14 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
     public boolean containsValue(Object value) {
         Object masked = mask(value);
         for (Object entry : entries) {
-            if (entry != null && entry.equals(masked)) {
-                return true;
+            if (entry != null) {
+                if (entry == masked) return true;
+                if (entry instanceof ArrayMap.KeyEntry) {
+                    entry = ((ArrayMap.KeyEntry)entry).getValue();
+                }
+                if (entry.equals(masked)) {
+                    return true;
+                }
             }
         }
         return false;
@@ -158,6 +164,11 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
 
     @Override
     public V remove(int idx) {
+        Object currentValue = removeRaw(idx);
+        return currentValue == null ? null : unmask(currentValue);
+    }
+
+    private Object removeRaw(int idx) {
         if (idx >= 0 && idx < entries.length) {
             Object entry = entries[idx];
             entries[idx] = null;
@@ -168,6 +179,8 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
         }
         return null;
     }
+
+
 
 
     @Override
@@ -413,8 +426,80 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
         }
 
         @Override
+        public boolean remove(Object o) {
+            Object masked = mask(o);
+            Object[] entries = ArrayMap.this.entries;
+            for (int i = 0; i < entries.length; i++) {
+                Object entry = entries[i];
+                if (entry != null) {
+                    if (entry == masked) return true;
+                    if (entry instanceof ArrayMap.KeyEntry) {
+                        entry = ((ArrayMap.KeyEntry)entry).getValue();
+                    }
+                    if (entry.equals(masked)) {
+                        ArrayMap.this.remove(i);
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public boolean retainAll(Collection<?> c) {
+            if (c == null) throw new NullPointerException();
+            if (c == this) return false;
+
+            boolean altered = false;
+            Object[] entries = ArrayMap.this.entries;
+            for (int i = 0; i < entries.length; i++) {
+                Object entry = entries[i];
+                if (entry == null) continue;
+                Object unmasked = unmask(entry);
+                if (!c.contains(unmasked)) {
+                    ArrayMap.this.remove(i);
+                    altered = true;
+                }
+            }
+            return altered;
+        }
+
+
+        @Override
         V valueOf(int key, V value) {
             return value;
+        }
+    }
+
+    private abstract class AbstractSet<T> extends AbstractCollection<T> implements Set<T> {
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == this)
+                return true;
+
+            if (!(o instanceof Set))
+                return false;
+            Collection<?> c = (Collection<?>) o;
+            if (c.size() != size())
+                return false;
+            try {
+                return containsAll(c);
+            } catch (ClassCastException | NullPointerException unused)   {
+                return false;
+            }
+        }
+
+        @Override
+        public int hashCode() {
+            int h = 0;
+            Iterator<T> i = iterator();
+            while (i.hasNext()) {
+                T obj = i.next();
+                if (obj != null)
+                    h += obj.hashCode();
+            }
+            return h;
         }
     }
 
@@ -457,7 +542,7 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
                 }
             }
 
-            for (; idx < size; ++idx) {
+            for (; idx < result.length; ++idx) {
                 result[idx] = null;
             }
 
@@ -467,11 +552,6 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
 
         @Override
         public boolean add(T element) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean remove(Object o) {
             throw new UnsupportedOperationException();
         }
 
@@ -486,7 +566,7 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
                     return false;
                 }
             }
-            return false;
+            return true;
         }
 
         @Override
@@ -495,22 +575,40 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
         }
 
         @Override
-        public boolean retainAll(Collection<?> c) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         public boolean removeAll(Collection<?> c) {
-            throw new UnsupportedOperationException();
+            if (c == null) throw new NullPointerException();
+
+            boolean removed = false;
+            for (Object o : c) {
+                removed |= remove(o);
+            }
+            return removed;
+
         }
 
         @Override
         public void clear() {
             ArrayMap.this.clear();
         }
+
+        public String toString() {
+            Iterator<T> it = iterator();
+            if (! it.hasNext())
+                return "[]";
+
+            StringBuilder sb = new StringBuilder();
+            sb.append('[');
+            for (;;) {
+                T e = it.next();
+                sb.append(e == this ? "(this Collection)" : e);
+                if (! it.hasNext())
+                    return sb.append(']').toString();
+                sb.append(',').append(' ');
+            }
+        }
     }
 
-    private class KeySet extends AbstractCollection<Integer> implements Set<Integer> {
+    private class KeySet extends AbstractSet<Integer> {
         @Override
         public boolean contains(Object o) {
             if (o == null) {
@@ -526,6 +624,33 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
             return new KeyIterator();
         }
 
+        @Override
+        public boolean remove(Object o) {
+            if (o == null) throw new NullPointerException();
+
+            int key = (int) o;
+            return ArrayMap.this.removeRaw(key) != null;
+        }
+
+        @Override
+        public boolean retainAll(Collection<?> c) {
+            if (c == null) throw new NullPointerException();
+            if (c == this) return false;
+
+            boolean altered = false;
+            Object[] entries = ArrayMap.this.entries;
+            for (int i = 0; i < entries.length; i++) {
+                Object entry = entries[i];
+                if (entry == null) continue;
+
+                if (!c.contains(i)) {
+                    ArrayMap.this.remove(i);
+                    altered = true;
+                }
+            }
+            return altered;
+        }
+
 
         @Override
         Integer valueOf(int key, V value) {
@@ -533,7 +658,7 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
         }
     }
 
-    private class EntrySet extends AbstractCollection<Entry<Integer, V>> implements Set<Entry<Integer, V>> {
+    private class EntrySet extends AbstractSet<Entry<Integer, V>>  {
 
         @Override
         public Iterator<Entry<Integer, V>> iterator() {
@@ -581,21 +706,12 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
                 }
             }
 
-            for (; idx < size; ++idx) {
+            for (; idx < result.length; ++idx) {
                 result[idx] = null;
             }
 
             return result;
 
-        }
-
-        @Override
-        public boolean add(Entry<Integer, V> entry) {
-            if (entry == null) {
-                throw new NullPointerException();
-            }
-            ArrayMap.this.put(entry.getKey(), entry.getValue());
-            return true;
         }
 
         @Override
@@ -624,12 +740,14 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
             if (c == null) {
                 throw new NullPointerException(); //according to spec
             }
+            if (c == this) return true;
+
             for (Object o : c) {
                 if (!contains(o)) {
                     return false;
                 }
             }
-            return false;
+            return true;
         }
 
         @Override
@@ -658,20 +776,6 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
         }
 
         @Override
-        public boolean removeAll(Collection<?> c) {
-            //noinspection ConstantConditions
-            if (c == null) {
-                throw new NullPointerException(); //according to spec
-            }
-            boolean all = true;
-            for (Object o : c) {
-                all &= remove(o);
-            }
-            return all;
-
-        }
-
-        @Override
         public boolean contains(Object o) {
             if (o == null) {
                 throw new NullPointerException(); //according to spec
@@ -681,40 +785,10 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
             if (entry.getKey() instanceof Integer) {
                 int idx = (int) entry.getKey();
                 if (idx >= 0 && idx < ArrayMap.this.entries.length) {
-                    return entry.equals(ArrayMap.this.entries[idx]);
+                    return entry.equals(unmask(ArrayMap.this.entries[idx]));
                 }
             }
             return false;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (o == this)
-                return true;
-
-            if (!(o instanceof Collection))
-                return false;
-
-            Collection c = (Collection) o;
-            if (c.size() != size())
-                return false;
-            try {
-                return containsAll(c);
-            } catch (ClassCastException | NullPointerException unused) {
-                return false;
-            }
-        }
-
-        public int hashCode() {
-            int h = 0;
-            Object[] entries = ArrayMap.this.entries;
-            for (int i = 0, length = entries.length; i < length; i++) {
-                Object entry = entries[i];
-                if (entry != null) {
-                    h += getEntry(i, entry).hashCode();
-                }
-            }
-            return h;
         }
 
         private class ArrayIterator extends AbstractArrayIterator<Entry<Integer, V>> {

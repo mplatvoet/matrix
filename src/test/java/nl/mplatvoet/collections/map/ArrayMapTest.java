@@ -38,7 +38,7 @@ public class ArrayMapTest {
                 .using(new DefaultTestMapGenerator())
                 .named("ArrayMapTests")
                 .withFeatures(
-                        CollectionSize.ZERO,
+                        CollectionSize.ONE,
                         MapFeature.SUPPORTS_REMOVE,
                         MapFeature.ALLOWS_NULL_VALUE_QUERIES,
                         MapFeature.ALLOWS_NULL_VALUES,
