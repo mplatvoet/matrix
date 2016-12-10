@@ -407,6 +407,11 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
         public int hashCode() {
             return ((Integer) key).hashCode() ^ (value == null ? 0 : value.hashCode());
         }
+
+        @Override
+        public final String toString() {
+            return key + "=" + value;
+        }
     }
 
     private class ValuesCollection extends AbstractCollection<V> {
@@ -427,19 +432,15 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
 
         @Override
         public boolean remove(Object o) {
-            Object masked = mask(o);
             Object[] entries = ArrayMap.this.entries;
             for (int i = 0; i < entries.length; i++) {
                 Object entry = entries[i];
-                if (entry != null) {
-                    if (entry == masked) return true;
-                    if (entry instanceof ArrayMap.KeyEntry) {
-                        entry = ((ArrayMap.KeyEntry)entry).getValue();
-                    }
-                    if (entry.equals(masked)) {
-                        ArrayMap.this.remove(i);
-                        return true;
-                    }
+                if (entry == null) continue;
+
+                V unmasked = unmask(entry);
+                if ((unmasked == null && o == null) || (unmasked != null && unmasked.equals(o))) {
+                    ArrayMap.this.remove(i);
+                    return true;
                 }
             }
             return false;
@@ -672,7 +673,7 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
 
         @Override
         Entry<Integer, V> valueOf(int key, V value) {
-            return getEntry(key, value);
+            return getEntry(key, ArrayMap.this.entries[key]);
         }
 
         @SuppressWarnings("unchecked")
@@ -778,14 +779,18 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
         @Override
         public boolean contains(Object o) {
             if (o == null) {
-                throw new NullPointerException(); //according to spec
+                throw new NullPointerException();
             }
 
-            Entry entry = (Entry) o; // potential CCE is according to spec
+            Entry entry = (Entry) o;
             if (entry.getKey() instanceof Integer) {
                 int idx = (int) entry.getKey();
                 if (idx >= 0 && idx < ArrayMap.this.entries.length) {
-                    return entry.equals(unmask(ArrayMap.this.entries[idx]));
+                    Object value = entry.getValue();
+                    V thisValue = unmask(ArrayMap.this.entries[idx]);
+                    if(thisValue == null && value == null) return true;
+                    //
+                    return value != null && value.equals(thisValue);
                 }
             }
             return false;
