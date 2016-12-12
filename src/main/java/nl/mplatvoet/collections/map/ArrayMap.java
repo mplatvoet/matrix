@@ -11,8 +11,6 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
     private final int endIndex;
 
     private transient ArrayHolder holder;
-    private transient int size = 0;
-    private transient int modCount = 0;
 
     private transient EntrySet entrySet = null;
     private transient KeySet keySet = null;
@@ -60,28 +58,28 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
     @Override
     public int size() {
         if (isBaseMap()) {
-            return size;
+            return holder.size;
         }
         if (startIndex == endIndex - 1) {
             return 0;
         }
 
         final Object[] entries = holder.entries;
-        int substract = 0;
+        int subtract = 0;
         for (int i = 0; i < startIndex; ++i) {
-            if (entries[i] != null) ++substract;
+            if (entries[i] != null) ++subtract;
         }
         for (int i = endIndex; i < entries.length; ++i) {
-            if (entries[i] != null) ++substract;
+            if (entries[i] != null) ++subtract;
         }
 
-        return size = substract;
+        return holder.size - subtract;
     }
 
     @Override
     public boolean isEmpty() {
         if (isBaseMap()) {
-            return size == 0;
+            return holder.size == 0;
         }
 
         final Object[] entries = holder.entries;
@@ -164,9 +162,9 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
         final Object[] entries = holder.entries;
         Object previous = entries[idx];
         entries[idx] = mask(value);
-        ++modCount;
+        ++holder.modCount;
         if (previous == null) {
-            ++size;
+            ++holder.size;
             return null;
         }
         return unmask(previous);
@@ -194,8 +192,8 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
             Object entry = entries[idx];
             entries[idx] = null;
             if (entry != null) {
-                --size;
-                ++modCount;
+                --holder.size;
+                ++holder.modCount;
             }
             return unmask(entry);
         }
@@ -212,16 +210,10 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
 
     @Override
     public void clear() {
-        if (isEmpty()) return;
-
         final Object[] entries = holder.entries;
-        int maxLength = Math.min(entries.length, endIndex);
-        Arrays.fill(entries, startIndex, maxLength, null);
-
-        if (isBaseMap()) {
-            size = 0;
-        }
-        ++modCount;
+        Arrays.fill(entries, null);
+        holder.size = 0;
+        ++holder.modCount;
     }
 
     private boolean isBaseMap() {
@@ -285,6 +277,9 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
             throw new IllegalArgumentException(
                     String.format("fromKey(%s) < startIndex(%s) || toKey(%s) > endIndex(%s) == false",
                             fromKey, startIndex, toKey, endIndex));
+        }
+        if (fromKey > toKey) {
+            throw new IllegalArgumentException(String.format("fromKey(%s) not smaller than toKey(%s)", fromKey, toKey));
         }
         return new ArrayMap<>(holder, fromKey, toKey);
     }
@@ -363,8 +358,8 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
             holder = new ArrayHolder(DEFAULT_CAPACITY);
         } else {
             final int requiredCapacity = s.readInt();
-            this.size = size;
             holder = new ArrayHolder(requiredCapacity);
+            holder.size = size;
 
             final Object[] entries = holder.entries;
             for (int i = 0; i < size; i++) {
@@ -391,9 +386,10 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
         }
 
         final int newSize = size();
-        result.size = newSize;
+
         Object[] src = holder.entries;
         result.holder = new ArrayHolder(maxSetIndex(src) + 1);
+        result.holder.size = newSize;
 
         final Object[] dest = result.holder.entries;
         int cloned = 0;
@@ -477,7 +473,9 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
          */
         private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
 
-        public Object[] entries;
+        Object[] entries;
+        int size = 0;
+        int modCount = 0;
 
         ArrayHolder(int initialCapacity) {
             if (initialCapacity < 0) {
@@ -989,7 +987,7 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
         private int expectedModCount;
 
         AbstractArrayIterator() {
-            expectedModCount = modCount;
+            expectedModCount = holder.modCount;
         }
 
         @Override
@@ -1006,7 +1004,7 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
 
         @Override
         public T next() {
-            if (modCount != expectedModCount) {
+            if (holder.modCount != expectedModCount) {
                 throw new ConcurrentModificationException();
             }
             Object[] entries = ArrayMap.this.holder.entries;
@@ -1027,14 +1025,14 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
             if (index < startIndex) {
                 throw new IllegalStateException("next() has not been called");
             }
-            if (modCount != expectedModCount) {
+            if (holder.modCount != expectedModCount) {
                 throw new ConcurrentModificationException();
             }
             if (removed) {
                 throw new IllegalStateException("remove() has already been called");
             }
             ArrayMap.this.remove(index);
-            expectedModCount = modCount;
+            expectedModCount = holder.modCount;
             removed = true;
         }
     }

@@ -1,9 +1,6 @@
 package nl.mplatvoet.collections.map;
 
-import com.google.common.collect.testing.MapTestSuiteBuilder;
-import com.google.common.collect.testing.SampleElements;
-import com.google.common.collect.testing.SortedMapTestSuiteBuilder;
-import com.google.common.collect.testing.TestMapGenerator;
+import com.google.common.collect.testing.*;
 import com.google.common.collect.testing.features.CollectionFeature;
 import com.google.common.collect.testing.features.CollectionSize;
 import com.google.common.collect.testing.features.MapFeature;
@@ -49,23 +46,21 @@ public class ArrayMapTest {
                             MapFeature.SUPPORTS_REMOVE,
                             MapFeature.FAILS_FAST_ON_CONCURRENT_MODIFICATION,
                             CollectionFeature.SUPPORTS_ITERATOR_REMOVE,
-                            CollectionFeature.SERIALIZABLE,
-                            CollectionFeature.KNOWN_ORDER
-
-
+                            CollectionFeature.SERIALIZABLE
+                            //CollectionFeature.SERIALIZABLE_INCLUDING_VIEWS
                     ).createTestSuite();
         }
     }
 
-    private static class DefaultTestMapGenerator implements TestMapGenerator<Integer, Integer> {
+    private static class DefaultTestMapGenerator implements TestSortedMapGenerator<Integer, Integer> {
         @Override
         public SampleElements<Map.Entry<Integer, Integer>> samples() {
             return new SampleElements<>(
-                    mapEntry(1, 1),
-                    mapEntry(2, 3),
-                    mapEntry(3, 2),
-                    mapEntry(90, 4),
-                    mapEntry(100, 5));
+                    mapEntry(10, 1),
+                    mapEntry(11, 3),
+                    mapEntry(12, 2),
+                    mapEntry(13, 4),
+                    mapEntry(20, 5));
         }
 
         @Override
@@ -76,6 +71,26 @@ public class ArrayMapTest {
                 map.put((Integer) entry.getKey(), (Integer) entry.getValue());
             }
             return map;
+        }
+
+        @Override
+        public Map.Entry<Integer, Integer> belowSamplesLesser() {
+            return mapEntry(1, 40);
+        }
+
+        @Override
+        public Map.Entry<Integer, Integer> belowSamplesGreater() {
+            return mapEntry(5, 20);
+        }
+
+        @Override
+        public Map.Entry<Integer, Integer> aboveSamplesLesser() {
+            return mapEntry(30, 10);
+        }
+
+        @Override
+        public Map.Entry<Integer, Integer> aboveSamplesGreater() {
+            return mapEntry(40, 7);
         }
 
         @SuppressWarnings("unchecked")
