@@ -210,6 +210,8 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
 
     @Override
     public void clear() {
+        if (holder.size == 0) return;
+
         final Object[] entries = holder.entries;
         Arrays.fill(entries, null);
         holder.size = 0;
