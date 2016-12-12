@@ -11,4 +11,10 @@ public interface IntKeyMap<V> extends SortedMap<Integer, V> {
     V put(int idx, V value);
 
     V remove(int idx);
+
+    IntKeyMap<V> subMap(int fromKey, int toKey);
+
+    IntKeyMap<V> headMap(int toKey);
+
+    IntKeyMap<V> tailMap(int fromKey);
 }

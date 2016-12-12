@@ -1,9 +1,9 @@
 package nl.mplatvoet.collections.matrix;
 
 import nl.mplatvoet.collections.map.ArrayMap;
+import nl.mplatvoet.collections.map.IntKeyMap;
 
 import java.util.Collection;
-import java.util.Map;
 
 public class ArrayMapExample {
     public static void main(String[] args) {
@@ -13,27 +13,47 @@ public class ArrayMapExample {
 
         map.put(9, "World");
         map.put(3, "Hello");
-        printValues(values);
+        print(values);
 
         map.put(4, "Crewl");
-        printValues(values);
+        print(values);
 
         map.put(4, "Jolly");
-        printValues(values);
+        print(values);
 
         map.remove(4);
         map.remove(9);
         map.put(5, "Mark");
-        printValues(values);
 
-        final Map.Entry<Integer, String> entry = map.entrySet().iterator().next();
-        entry.setValue("Bye");
+        print(values);
 
-        printValues(values);
 
+        final IntKeyMap<String> firstSub = map.subMap(4, 10);
+        final Collection<String> firstValues = firstSub.values();
+        print(firstValues);
+
+
+        final IntKeyMap<String> secondSub = firstSub.subMap(4, 8);
+        final Collection<String> secondValues = secondSub.values();
+        print(secondValues);
+
+        secondSub.put(7, "Platvoet");
+
+        print("First values:");
+        print(firstValues);
+
+        print("Second values:");
+        print(secondValues);
+
+
+        System.out.println(firstValues.equals(secondValues));
     }
 
-    private static void printValues(Collection<String> c) {
+    private static void print(String s) {
+        System.out.println(s);
+    }
+
+    private static void print(Collection<String> c) {
         StringBuilder sb = new StringBuilder();
         for (String s : c) {
             if (sb.length() > 0) sb.append(" ");

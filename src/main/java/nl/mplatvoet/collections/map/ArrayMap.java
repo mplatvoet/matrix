@@ -276,17 +276,38 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
 
     @Override
     public SortedMap<Integer, V> subMap(Integer fromKey, Integer toKey) {
-        return new ArrayMap<>(holder, fromKey, toKey);
+        return subMap((int) fromKey, (int) toKey);
     }
 
     @Override
+    public IntKeyMap<V> subMap(int fromKey, int toKey) {
+        if (fromKey < startIndex || toKey > endIndex) {
+            throw new IllegalArgumentException(
+                    String.format("fromKey(%s) < startIndex(%s) || toKey(%s) > endIndex(%s) == false",
+                            fromKey, startIndex, toKey, endIndex));
+        }
+        return new ArrayMap<>(holder, fromKey, toKey);
+    }
+
+
+    @Override
     public SortedMap<Integer, V> headMap(Integer toKey) {
-        return new ArrayMap<>(holder, startIndex, toKey);
+        return headMap((int) toKey);
+    }
+
+    @Override
+    public IntKeyMap<V> headMap(int toKey) {
+        return subMap(startIndex, toKey);
     }
 
     @Override
     public SortedMap<Integer, V> tailMap(Integer fromKey) {
-        return new ArrayMap<>(holder, fromKey, endIndex);
+        return tailMap((int) fromKey);
+    }
+
+    @Override
+    public IntKeyMap<V> tailMap(int fromKey) {
+        return subMap(fromKey, endIndex);
     }
 
     @Override
@@ -703,6 +724,32 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
             ArrayMap.this.clear();
         }
 
+        @Override
+        public boolean equals(Object o) {
+            if (o == this)
+                return true;
+
+            if (!(o instanceof Collection))
+                return false;
+            Collection<?> c = (Collection<?>) o;
+            if (c.size() != size())
+                return false;
+            try {
+                return containsAll(c);
+            } catch (ClassCastException | NullPointerException unused) {
+                return false;
+            }
+        }
+
+        @Override
+        public int hashCode() {
+            int h = 0;
+            for (T obj : this) {
+                h += Objects.hashCode(obj);
+            }
+            return h;
+        }
+
         public String toString() {
             Iterator<T> it = iterator();
             if (!it.hasNext())
@@ -937,7 +984,7 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
     }
 
     private abstract class AbstractArrayIterator<T> implements Iterator<T> {
-        private int index = startIndex -1;
+        private int index = startIndex - 1;
         private boolean removed = false;
         private int expectedModCount;
 
