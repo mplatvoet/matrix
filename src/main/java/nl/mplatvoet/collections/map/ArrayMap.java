@@ -5,20 +5,13 @@ import java.io.Serializable;
 import java.util.*;
 
 public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
-
-    /**
-     * Some VMs reserve some header words in an array.
-     * Attempts to allocate larger arrays may result in
-     * OutOfMemoryError: Requested array size exceeds VM limit
-     */
-    private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
-
     private static final int DEFAULT_CAPACITY = 10;
     private static final Object NULL_MARKER = new Object();
+    private final int startIndex;
+    private final int endIndex;
 
-    private transient Object[] entries;
+    private transient ArrayHolder holder;
     private transient int size = 0;
-
     private transient int modCount = 0;
 
     private transient EntrySet entrySet = null;
@@ -29,24 +22,22 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
         this(DEFAULT_CAPACITY);
     }
 
-    @SuppressWarnings("unchecked")
     public ArrayMap(int initialCapacity) {
-        if (initialCapacity < 0) {
-            throw new IllegalArgumentException("initialCapacity must be >= 0");
-        }
-        if (initialCapacity > MAX_ARRAY_SIZE) {
-            throw new IllegalArgumentException("initialCapacity exceeds maximum capacity: " + MAX_ARRAY_SIZE);
-        }
-        initialCapacity = Math.max(initialCapacity, DEFAULT_CAPACITY);
-        entries = new Object[initialCapacity];
+        this(new ArrayHolder(Math.max(initialCapacity, DEFAULT_CAPACITY)), 0, ArrayHolder.MAX_ARRAY_SIZE);
     }
 
-    private Object mask(Object value) {
+    private ArrayMap(ArrayHolder holder, int startIndex, int endIndex) {
+        this.holder = holder;
+        this.startIndex = startIndex;
+        this.endIndex = endIndex;
+    }
+
+    private static Object mask(Object value) {
         return value == null ? NULL_MARKER : value;
     }
 
     @SuppressWarnings("unchecked")
-    private V unmask(Object value) {
+    private static <V> V unmask(Object value) {
         if (value == NULL_MARKER) {
             return null;
         }
@@ -56,14 +47,49 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
         return (V) value;
     }
 
+    private void validateLegalRange(int idx) {
+        if (!isLegalRange(idx)) {
+            throw new IllegalArgumentException("idx must be " + startIndex + " >= idx < " + endIndex);
+        }
+    }
+
+    private boolean isLegalRange(int idx) {
+        return idx >= startIndex && idx < endIndex;
+    }
+
     @Override
     public int size() {
-        return size;
+        if (isBaseMap()) {
+            return size;
+        }
+        if (startIndex == endIndex - 1) {
+            return 0;
+        }
+
+        final Object[] entries = holder.entries;
+        int substract = 0;
+        for (int i = 0; i < startIndex; ++i) {
+            if (entries[i] != null) ++substract;
+        }
+        for (int i = endIndex; i < entries.length; ++i) {
+            if (entries[i] != null) ++substract;
+        }
+
+        return size = substract;
     }
 
     @Override
     public boolean isEmpty() {
-        return size == 0;
+        if (isBaseMap()) {
+            return size == 0;
+        }
+
+        final Object[] entries = holder.entries;
+        int maxLength = Math.min(entries.length, endIndex);
+        for (int i = startIndex; i < maxLength; ++i) {
+            if (entries[i] != null) return false;
+        }
+        return true;
     }
 
     @Override
@@ -77,24 +103,29 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
 
     @Override
     public boolean containsKey(int idx) {
-        return idx >= 0 && idx < entries.length && entries[idx] != null;
+        final Object[] entries = holder.entries;
+        return isLegalRange(idx) && idx < entries.length && entries[idx] != null;
     }
 
     @Override
     public boolean containsValue(Object value) {
-        Object masked = mask(value);
-        for (Object entry : entries) {
-            if (entry != null) {
-                if (entry == masked) return true;
-                if (entry instanceof ArrayMap.KeyEntry) {
-                    entry = ((ArrayMap.KeyEntry)entry).getValue();
-                }
-                if (entry.equals(masked)) {
-                    return true;
-                }
+        return containValueIdx(value) > -1;
+    }
+
+    private int containValueIdx(Object value) {
+        Object[] entries = holder.entries;
+        int maxLength = Math.min(entries.length, endIndex);
+        for (int i = startIndex; i < maxLength; i++) {
+            Object entry = entries[i];
+            if (entry == null) continue;
+
+            V entryValue = unmask(entry);
+
+            if (Objects.equals(entryValue, value)) {
+                return i;
             }
         }
-        return false;
+        return -1;
     }
 
     @Override
@@ -108,7 +139,8 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
 
     @Override
     public V get(int idx) {
-        if (idx >= 0 && idx < entries.length) {
+        final Object[] entries = holder.entries;
+        if (isLegalRange(idx) && idx < entries.length) {
             Object entry = entries[idx];
             return unmask(entry);
         }
@@ -126,11 +158,10 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
 
     @Override
     public V put(int idx, V value) {
-        if (idx < 0) {
-            throw new IllegalArgumentException("key must be a positive number or 0, but was: " + idx);
-        }
-        ensureCapacity(idx + 1);
+        validateLegalRange(idx);
+        holder.ensureCapacity(idx + 1);
 
+        final Object[] entries = holder.entries;
         Object previous = entries[idx];
         entries[idx] = mask(value);
         ++modCount;
@@ -139,20 +170,6 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
             return null;
         }
         return unmask(previous);
-    }
-
-
-    private void ensureCapacity(int minCapacity) {
-        if (minCapacity - entries.length > 0) {
-            int oldCapacity = entries.length;
-            int newCapacity = oldCapacity + (oldCapacity >> 1);
-            if (newCapacity - minCapacity < 0)
-                newCapacity = minCapacity;
-            if (newCapacity - MAX_ARRAY_SIZE > 0)
-                throw new OutOfMemoryError();
-
-            entries = Arrays.copyOf(entries, newCapacity);
-        }
     }
 
 
@@ -172,7 +189,8 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
     }
 
     private Object removeRaw(int idx) {
-        if (idx >= 0 && idx < entries.length) {
+        final Object[] entries = holder.entries;
+        if (isLegalRange(idx) && idx < entries.length) {
             Object entry = entries[idx];
             entries[idx] = null;
             if (entry != null) {
@@ -185,8 +203,6 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
     }
 
 
-
-
     @Override
     public void putAll(Map<? extends Integer, ? extends V> m) {
         for (Entry<? extends Integer, ? extends V> entry : m.entrySet()) {
@@ -196,9 +212,20 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
 
     @Override
     public void clear() {
-        Arrays.fill(entries, null);
-        size = 0;
+        if (isEmpty()) return;
+
+        final Object[] entries = holder.entries;
+        int maxLength = Math.min(entries.length, endIndex);
+        Arrays.fill(entries, startIndex, maxLength, null);
+
+        if (isBaseMap()) {
+            size = 0;
+        }
         ++modCount;
+    }
+
+    private boolean isBaseMap() {
+        return startIndex == 0 && endIndex == ArrayHolder.MAX_ARRAY_SIZE;
     }
 
     @Override
@@ -226,25 +253,72 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
     }
 
     private int maxSetIndex(Object[] entries) {
-        for (int i = entries.length - 1; i >= 0; --i) {
+        int maxLength = Math.min(entries.length, endIndex);
+        for (int i = maxLength - 1; i >= startIndex; --i) {
             if (entries[i] != null) return i;
         }
         return -1;
     }
 
+    private int minSetIndex(Object[] entries) {
+        int maxLength = Math.min(entries.length, endIndex);
+        for (int i = startIndex; i < maxLength; ++i) {
+            if (entries[i] != null) return i;
+        }
+        return -1;
+    }
+
+    @Override
+    public Comparator<? super Integer> comparator() {
+        //natural ordering of the int key
+        return null;
+    }
+
+    @Override
+    public SortedMap<Integer, V> subMap(Integer fromKey, Integer toKey) {
+        return new ArrayMap<>(holder, fromKey, toKey);
+    }
+
+    @Override
+    public SortedMap<Integer, V> headMap(Integer toKey) {
+        return new ArrayMap<>(holder, startIndex, toKey);
+    }
+
+    @Override
+    public SortedMap<Integer, V> tailMap(Integer fromKey) {
+        return new ArrayMap<>(holder, fromKey, endIndex);
+    }
+
+    @Override
+    public Integer firstKey() {
+        if (isEmpty()) {
+            throw new NoSuchElementException();
+        }
+        return minSetIndex(holder.entries);
+    }
+
+    @Override
+    public Integer lastKey() {
+        if (isEmpty()) {
+            throw new NoSuchElementException();
+        }
+        return maxSetIndex(holder.entries);
+    }
+
     private void writeObject(java.io.ObjectOutputStream s) throws IOException {
-        final int size = this.size;
+        final int size = size();
         s.defaultWriteObject();
-        s.writeInt(size);
+        s.writeInt(size());
 
         if (size > 0) {
-            final Object[] entries = this.entries;
+            final Object[] entries = holder.entries;
             final int requiredCapacity = maxSetIndex(entries) + 1;
 
             s.writeInt(requiredCapacity);
 
             int written = 0;
-            for (int i = 0; i < entries.length && written < size; ++i) {
+            int maxLength = Math.min(entries.length, endIndex);
+            for (int i = startIndex; i < maxLength && written < size; ++i) {
                 final Object entry = entries[i];
                 if (entry == null) continue;
                 final V unmasked = unmask(entry);
@@ -265,12 +339,13 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
         s.defaultReadObject();
         final int size = s.readInt();
         if (size == 0) {
-            this.entries = new Object[DEFAULT_CAPACITY];
+            holder = new ArrayHolder(DEFAULT_CAPACITY);
         } else {
             final int requiredCapacity = s.readInt();
             this.size = size;
-            this.entries = new Object[requiredCapacity];
+            holder = new ArrayHolder(requiredCapacity);
 
+            final Object[] entries = holder.entries;
             for (int i = 0; i < size; i++) {
                 final int idx = s.readInt();
                 if (idx < 0) {
@@ -294,18 +369,20 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
             throw new InternalError(e);
         }
 
-        result.size = this.size;
-        Object[] src = this.entries;
-        result.entries = new Object[maxSetIndex(src) +1];
+        final int newSize = size();
+        result.size = newSize;
+        Object[] src = holder.entries;
+        result.holder = new ArrayHolder(maxSetIndex(src) + 1);
 
-
+        final Object[] dest = result.holder.entries;
         int cloned = 0;
-        for (int i = 0; i < src.length && cloned < size; ++i) {
+        int maxLength = Math.min(src.length, endIndex);
+        for (int i = startIndex; i < maxLength && cloned < newSize; ++i) {
             final Object entry = src[i];
             if (entry == null) continue;
 
             //mask(unmask(entry)) will unwrap any Entry instance
-            result.entries[i] = mask(unmask(entry));
+            dest[i] = mask(unmask(entry));
 
             ++cloned;
         }
@@ -314,24 +391,27 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
     }
 
     public boolean equals(Object o) {
-        if (o == this)
-            return true;
+        if (o == this) return true;
 
-        if (!(o instanceof Map))
-            return false;
-        Map<?,?> m = (Map<?,?>) o;
-        if (m.size() != size())
-            return false;
+        if (!(o instanceof Map)) return false;
+
+        Map<?, ?> other = (Map<?, ?>) o;
+        if (other.size() != size()) return false;
 
         try {
-            for (Entry<Integer, V> e : entrySet()) {
-                int key = e.getKey();
-                V value = e.getValue();
+            Object[] entries = ArrayMap.this.holder.entries;
+            int maxLength = Math.min(entries.length, endIndex);
+            for (int key = startIndex; key < maxLength; ++key) {
+                final Object entry = entries[key];
+                if (entry == null) continue;
+
+                V value = unmask(entry);
+                final Object otherValue = other.get(key);
                 if (value == null) {
-                    if (!(m.get(key) == null && m.containsKey(key)))
+                    if (!(otherValue == null && other.containsKey(key)))
                         return false;
                 } else {
-                    if (!value.equals(m.get(key)))
+                    if (!value.equals(otherValue))
                         return false;
                 }
             }
@@ -344,30 +424,63 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
 
     public int hashCode() {
         int h = 0;
-        for (Entry<Integer, V> integerVEntry : entrySet()) h += integerVEntry.hashCode();
+        for (Entry<Integer, V> entry : entrySet()) h += entry.hashCode();
         return h;
     }
 
     public String toString() {
-        Iterator<Entry<Integer,V>> i = entrySet().iterator();
-        if (! i.hasNext())
+        Iterator<Entry<Integer, V>> i = entrySet().iterator();
+        if (!i.hasNext())
             return "{}";
 
         StringBuilder sb = new StringBuilder();
         sb.append('{');
-        for (;;) {
-            Entry<Integer,V> e = i.next();
+        for (; ; ) {
+            Entry<Integer, V> e = i.next();
             int key = e.getKey();
             V value = e.getValue();
             sb.append(key);
             sb.append('=');
             sb.append(value == this ? "(this Map)" : value);
-            if (! i.hasNext())
+            if (!i.hasNext())
                 return sb.append('}').toString();
             sb.append(',').append(' ');
         }
     }
 
+    private static class ArrayHolder {
+        /**
+         * Some VMs reserve some header words in an array.
+         * Attempts to allocate larger arrays may result in
+         * OutOfMemoryError: Requested array size exceeds VM limit
+         */
+        private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
+
+        public Object[] entries;
+
+        ArrayHolder(int initialCapacity) {
+            if (initialCapacity < 0) {
+                throw new IllegalArgumentException("initialCapacity must be >= 0");
+            }
+            if (initialCapacity > MAX_ARRAY_SIZE) {
+                throw new IllegalArgumentException("initialCapacity exceeds maximum capacity: " + MAX_ARRAY_SIZE);
+            }
+            entries = new Object[initialCapacity];
+        }
+
+        private void ensureCapacity(int minCapacity) {
+            if (minCapacity - entries.length > 0) {
+                int oldCapacity = entries.length;
+                int newCapacity = oldCapacity + (oldCapacity >> 1);
+                if (newCapacity - minCapacity < 0)
+                    newCapacity = minCapacity;
+                if (newCapacity - MAX_ARRAY_SIZE > 0)
+                    throw new OutOfMemoryError();
+
+                entries = Arrays.copyOf(entries, newCapacity);
+            }
+        }
+    }
 
     private class KeyEntry implements Map.Entry<Integer, V> {
         private final int key;
@@ -437,16 +550,10 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
 
         @Override
         public boolean remove(Object o) {
-            Object[] entries = ArrayMap.this.entries;
-            for (int i = 0; i < entries.length; i++) {
-                Object entry = entries[i];
-                if (entry == null) continue;
-
-                V unmasked = unmask(entry);
-                if ((unmasked == null && o == null) || (unmasked != null && unmasked.equals(o))) {
-                    ArrayMap.this.remove(i);
-                    return true;
-                }
+            final int idx = containValueIdx(o);
+            if (idx > -1) {
+                ArrayMap.this.remove(idx);
+                return true;
             }
             return false;
         }
@@ -457,8 +564,9 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
             if (c == this) return false;
 
             boolean altered = false;
-            Object[] entries = ArrayMap.this.entries;
-            for (int i = 0; i < entries.length; i++) {
+            Object[] entries = ArrayMap.this.holder.entries;
+            int maxLength = Math.min(entries.length, endIndex);
+            for (int i = startIndex; i < maxLength; ++i) {
                 Object entry = entries[i];
                 if (entry == null) continue;
                 Object unmasked = unmask(entry);
@@ -491,7 +599,7 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
                 return false;
             try {
                 return containsAll(c);
-            } catch (ClassCastException | NullPointerException unused)   {
+            } catch (ClassCastException | NullPointerException unused) {
                 return false;
             }
         }
@@ -499,11 +607,8 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
         @Override
         public int hashCode() {
             int h = 0;
-            Iterator<T> i = iterator();
-            while (i.hasNext()) {
-                T obj = i.next();
-                if (obj != null)
-                    h += obj.hashCode();
+            for (T obj : this) {
+                h += Objects.hashCode(obj);
             }
             return h;
         }
@@ -539,8 +644,9 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
                             .newInstance(a.getClass().getComponentType(), size);
 
             int idx = 0;
-            Object[] entries = ArrayMap.this.entries;
-            for (int key = 0; key < entries.length && idx < size; ++key) {
+            Object[] entries = ArrayMap.this.holder.entries;
+            int maxLength = Math.min(entries.length, endIndex);
+            for (int key = startIndex; key < maxLength && idx < size; ++key) {
                 Object entry = entries[key];
                 if (entry != null) {
                     result[idx] = (E) valueOf(key, unmask(entry));
@@ -599,15 +705,15 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
 
         public String toString() {
             Iterator<T> it = iterator();
-            if (! it.hasNext())
+            if (!it.hasNext())
                 return "[]";
 
             StringBuilder sb = new StringBuilder();
             sb.append('[');
-            for (;;) {
+            for (; ; ) {
                 T e = it.next();
                 sb.append(e == this ? "(this Collection)" : e);
-                if (! it.hasNext())
+                if (!it.hasNext())
                     return sb.append(']').toString();
                 sb.append(',').append(' ');
             }
@@ -620,9 +726,7 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
             if (o == null) {
                 throw new NullPointerException(); //according to spec
             }
-
-            Integer idx = (Integer) o; // potential CCE is according to spec
-            return idx >= 0 && idx < ArrayMap.this.entries.length && ArrayMap.this.entries[idx] != null;
+            return containsKey(o);
         }
 
         @Override
@@ -644,8 +748,9 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
             if (c == this) return false;
 
             boolean altered = false;
-            Object[] entries = ArrayMap.this.entries;
-            for (int i = 0; i < entries.length; i++) {
+            Object[] entries = ArrayMap.this.holder.entries;
+            int maxLength = Math.min(entries.length, endIndex);
+            for (int i = startIndex; i < maxLength; i++) {
                 Object entry = entries[i];
                 if (entry == null) continue;
 
@@ -664,7 +769,7 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
         }
     }
 
-    private class EntrySet extends AbstractSet<Entry<Integer, V>>  {
+    private class EntrySet extends AbstractSet<Entry<Integer, V>> {
 
         @Override
         public Iterator<Entry<Integer, V>> iterator() {
@@ -673,12 +778,12 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
 
         @Override
         public Object[] toArray() {
-            return toArray(new Object[ArrayMap.this.size]);
+            return toArray(new Object[size()]);
         }
 
         @Override
         Entry<Integer, V> valueOf(int key, V value) {
-            return getEntry(key, ArrayMap.this.entries[key]);
+            return getEntry(key, ArrayMap.this.holder.entries[key]);
         }
 
         @SuppressWarnings("unchecked")
@@ -688,7 +793,7 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
             }
             V value = currentEntry == NULL_MARKER ? null : (V) currentEntry;
             final KeyEntry keyEntry = new KeyEntry(idx, value);
-            ArrayMap.this.entries[idx] = keyEntry;
+            ArrayMap.this.holder.entries[idx] = keyEntry;
             return keyEntry;
         }
 
@@ -703,8 +808,9 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
                             .newInstance(a.getClass().getComponentType(), size);
 
             int idx = 0;
-            Object[] entries = ArrayMap.this.entries;
-            for (int key = 0; key < entries.length && idx < size; ++key) {
+            Object[] entries = ArrayMap.this.holder.entries;
+            int maxLength = Math.min(entries.length, endIndex);
+            for (int key = startIndex; key < maxLength && idx < size; ++key) {
                 Object entry = entries[key];
                 if (entry != null) {
                     result[idx] = (E) getEntry(key, entry);
@@ -728,8 +834,10 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
             Entry entry = (Entry) o; // potential CCE is according to spec
             if (entry.getKey() instanceof Integer) {
                 int idx = (int) entry.getKey();
+                if (!isLegalRange(idx)) return false;
+
                 Object masked = mask(entry.getValue());
-                Object[] entries = ArrayMap.this.entries;
+                Object[] entries = ArrayMap.this.holder.entries;
                 if (idx >= 0 && idx < entries.length) {
                     if (masked.equals(entries[idx])) {
                         ArrayMap.this.remove(idx);
@@ -763,14 +871,15 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
                 throw new NullPointerException(); // according to spec
             }
             if (c.isEmpty()) {
-                int size = ArrayMap.this.size;
+                int size = ArrayMap.this.size();
                 ArrayMap.this.clear();
                 return size > 0;
             }
 
             boolean modified = false;
-            Object[] entries = ArrayMap.this.entries;
-            for (int i = 0, length = entries.length; i < length; i++) {
+            Object[] entries = ArrayMap.this.holder.entries;
+            int maxLength = Math.min(entries.length, endIndex);
+            for (int i = startIndex; i < maxLength; ++i) {
                 Object entry = entries[i];
                 if (entry != null && !c.contains(getEntry(i, entry))) {
                     ArrayMap.this.remove(i);
@@ -790,13 +899,14 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
             Entry entry = (Entry) o;
             if (entry.getKey() instanceof Integer) {
                 int idx = (int) entry.getKey();
-                if (idx >= 0 && idx < ArrayMap.this.entries.length) {
+                final Object[] entries = ArrayMap.this.holder.entries;
+                if (isLegalRange(idx) && idx < entries.length) {
                     Object value = entry.getValue();
-                    Object rawEntry = ArrayMap.this.entries[idx];
+                    Object rawEntry = entries[idx];
                     if (rawEntry == null) return false;
 
                     V thisValue = unmask(rawEntry);
-                    if(thisValue == null && value == null) return true;
+                    if (thisValue == null && value == null) return true;
                     //
                     return value != null && value.equals(thisValue);
                 }
@@ -827,7 +937,7 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
     }
 
     private abstract class AbstractArrayIterator<T> implements Iterator<T> {
-        private int index = -1;
+        private int index = startIndex -1;
         private boolean removed = false;
         private int expectedModCount;
 
@@ -837,8 +947,9 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
 
         @Override
         public boolean hasNext() {
-            Object[] entries = ArrayMap.this.entries;
-            for (int i = index + 1; i < entries.length; ++i) {
+            Object[] entries = ArrayMap.this.holder.entries;
+            int maxLength = Math.min(entries.length, endIndex);
+            for (int i = index + 1; i < maxLength; ++i) {
                 if (entries[i] != null) return true;
             }
             return false;
@@ -851,15 +962,14 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
             if (modCount != expectedModCount) {
                 throw new ConcurrentModificationException();
             }
-            Object[] entries = ArrayMap.this.entries;
-            for (int i = index + 1; i < entries.length; ++i) {
+            Object[] entries = ArrayMap.this.holder.entries;
+            int maxLength = Math.min(entries.length, endIndex);
+            for (int i = index + 1; i < maxLength; ++i) {
                 Object entry = entries[i];
                 if (entry != null) {
                     removed = false;
                     index = i;
-                    T value = valueOf(i, unmask(entry));
-
-                    return value;
+                    return valueOf(i, unmask(entry));
                 }
             }
             throw new NoSuchElementException();
@@ -867,7 +977,7 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
 
         @Override
         public void remove() {
-            if (index < 0) {
+            if (index < startIndex) {
                 throw new IllegalStateException("next() has not been called");
             }
             if (modCount != expectedModCount) {
@@ -881,6 +991,4 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
             removed = true;
         }
     }
-
-
 }

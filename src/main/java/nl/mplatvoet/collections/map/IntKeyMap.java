@@ -1,9 +1,8 @@
 package nl.mplatvoet.collections.map;
 
+import java.util.SortedMap;
 
-import java.util.Map;
-
-public interface IntKeyMap<V> extends Map<Integer, V> {
+public interface IntKeyMap<V> extends SortedMap<Integer, V> {
 
     boolean containsKey(int idx);
 

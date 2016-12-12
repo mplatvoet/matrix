@@ -2,6 +2,7 @@ package nl.mplatvoet.collections.map;
 
 import com.google.common.collect.testing.MapTestSuiteBuilder;
 import com.google.common.collect.testing.SampleElements;
+import com.google.common.collect.testing.SortedMapTestSuiteBuilder;
 import com.google.common.collect.testing.TestMapGenerator;
 import com.google.common.collect.testing.features.CollectionFeature;
 import com.google.common.collect.testing.features.CollectionSize;
@@ -13,6 +14,7 @@ import org.junit.runners.Suite;
 
 import java.util.List;
 import java.util.Map;
+import java.util.SortedMap;
 
 import static com.google.common.collect.testing.Helpers.mapEntry;
 
@@ -34,7 +36,7 @@ public class ArrayMapTest {
 
     public static class GuavaTests {
         public static TestSuite suite() {
-            return MapTestSuiteBuilder
+            return SortedMapTestSuiteBuilder
                     .using(new DefaultTestMapGenerator())
                     .named("ArrayMapGuavaTest")
                     .withFeatures(
@@ -47,7 +49,9 @@ public class ArrayMapTest {
                             MapFeature.SUPPORTS_REMOVE,
                             MapFeature.FAILS_FAST_ON_CONCURRENT_MODIFICATION,
                             CollectionFeature.SUPPORTS_ITERATOR_REMOVE,
-                            CollectionFeature.SERIALIZABLE
+                            CollectionFeature.SERIALIZABLE,
+                            CollectionFeature.KNOWN_ORDER
+
 
                     ).createTestSuite();
         }
@@ -65,7 +69,7 @@ public class ArrayMapTest {
         }
 
         @Override
-        public Map<Integer, Integer> create(Object... elements) {
+        public SortedMap<Integer, Integer> create(Object... elements) {
             ArrayMap<Integer> map = new ArrayMap<>();
             for (Object e : elements) {
                 Map.Entry<?, ?> entry = (Map.Entry<?, ?>) e;
