@@ -1,7 +1,9 @@
 package nl.mplatvoet.collections.matrix;
 
 import nl.mplatvoet.collections.matrix.args.Arguments;
-import nl.mplatvoet.collections.matrix.fn.*;
+import nl.mplatvoet.collections.matrix.fn.CellMapFunction;
+import nl.mplatvoet.collections.matrix.fn.DetachedCell;
+import nl.mplatvoet.collections.matrix.fn.Functions;
 import nl.mplatvoet.collections.matrix.range.Range;
 
 import java.util.Iterator;

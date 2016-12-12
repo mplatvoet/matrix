@@ -1,11 +1,11 @@
 package nl.mplatvoet.collections.matrix;
 
 
-import nl.mplatvoet.collections.matrix.fn.*;
+import nl.mplatvoet.collections.matrix.fn.CellMapFunction;
+import nl.mplatvoet.collections.matrix.fn.Functions;
 import nl.mplatvoet.collections.matrix.range.Range;
 
 import java.util.Iterator;
-import java.util.function.Function;
 
 import static nl.mplatvoet.collections.matrix.ExampleUtil.printMatrix;
 import static nl.mplatvoet.collections.matrix.ExampleUtil.randomMatrix;

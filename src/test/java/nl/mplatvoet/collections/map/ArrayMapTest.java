@@ -1,22 +1,17 @@
 package nl.mplatvoet.collections.map;
 
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import com.google.common.collect.testing.MapTestSuiteBuilder;
 import com.google.common.collect.testing.SampleElements;
 import com.google.common.collect.testing.TestMapGenerator;
 import com.google.common.collect.testing.features.CollectionFeature;
 import com.google.common.collect.testing.features.CollectionSize;
 import com.google.common.collect.testing.features.MapFeature;
-import com.google.common.collect.testing.features.SetFeature;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.testing.Helpers.mapEntry;
 
 
