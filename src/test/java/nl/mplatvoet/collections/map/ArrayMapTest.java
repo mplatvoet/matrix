@@ -6,49 +6,52 @@ import com.google.common.collect.testing.TestMapGenerator;
 import com.google.common.collect.testing.features.CollectionFeature;
 import com.google.common.collect.testing.features.CollectionSize;
 import com.google.common.collect.testing.features.MapFeature;
-import junit.framework.Test;
 import junit.framework.TestSuite;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Suite;
 
 import java.util.List;
 import java.util.Map;
 
 import static com.google.common.collect.testing.Helpers.mapEntry;
 
-
+@RunWith(Suite.class)
+@Suite.SuiteClasses({
+        ArrayMapTest.GuavaTests.class,
+        ArrayMapTest.AdditionalTests.class,
+})
 public class ArrayMapTest {
 
+    public static class AdditionalTests {
+        private ArrayMap<String> map = new ArrayMap<>();
 
-    public static Test suite() {
-        return new ArrayMapTest().allTests();
+        @Test(expected = IllegalArgumentException.class)
+        public void put_negativeKeyShouldThrow() throws Exception {
+            map.put(-1, "");
+        }
     }
 
-    public Test allTests() {
-        TestSuite suite =
-                new TestSuite("nl.mplatvoet.collections.map.ArrayMap");
-        suite.addTest(arrayMapDefaultTests());
-        return suite;
+    public static class GuavaTests {
+        public static TestSuite suite() {
+            return MapTestSuiteBuilder
+                    .using(new DefaultTestMapGenerator())
+                    .named("ArrayMapGuavaTest")
+                    .withFeatures(
+                            CollectionSize.ANY,
+                            MapFeature.SUPPORTS_REMOVE,
+                            MapFeature.ALLOWS_NULL_VALUE_QUERIES,
+                            MapFeature.ALLOWS_NULL_VALUES,
+                            MapFeature.RESTRICTS_KEYS,
+                            MapFeature.SUPPORTS_PUT,
+                            MapFeature.SUPPORTS_REMOVE,
+                            MapFeature.FAILS_FAST_ON_CONCURRENT_MODIFICATION,
+                            CollectionFeature.SUPPORTS_ITERATOR_REMOVE,
+                            CollectionFeature.SERIALIZABLE
+
+                    ).createTestSuite();
+        }
     }
-
-    private Test arrayMapDefaultTests() {
-        return MapTestSuiteBuilder
-                .using(new DefaultTestMapGenerator())
-                .named("ArrayMapTests")
-                .withFeatures(
-                        CollectionSize.ANY,
-                        MapFeature.SUPPORTS_REMOVE,
-                        MapFeature.ALLOWS_NULL_VALUE_QUERIES,
-                        MapFeature.ALLOWS_NULL_VALUES,
-                        MapFeature.RESTRICTS_KEYS,
-                        MapFeature.SUPPORTS_PUT,
-                        MapFeature.SUPPORTS_REMOVE,
-                        MapFeature.FAILS_FAST_ON_CONCURRENT_MODIFICATION,
-                        CollectionFeature.SUPPORTS_ITERATOR_REMOVE,
-                        CollectionFeature.SERIALIZABLE
-
-                )
-                .createTestSuite();
-    }
-
 
     private static class DefaultTestMapGenerator implements TestMapGenerator<Integer, Integer> {
         @Override
@@ -66,7 +69,7 @@ public class ArrayMapTest {
             ArrayMap<Integer> map = new ArrayMap<>();
             for (Object e : elements) {
                 Map.Entry<?, ?> entry = (Map.Entry<?, ?>) e;
-                map.put((Integer)entry.getKey(), (Integer)entry.getValue());
+                map.put((Integer) entry.getKey(), (Integer) entry.getValue());
             }
             return map;
         }
