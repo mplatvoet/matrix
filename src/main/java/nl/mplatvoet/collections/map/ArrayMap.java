@@ -210,11 +210,23 @@ public class ArrayMap<V> implements IntKeyMap<V>, Serializable, Cloneable {
 
     @Override
     public void clear() {
-        if (holder.size == 0) return;
+        if (holder.size == 0 || isEmpty()) return;
 
         final Object[] entries = holder.entries;
-        Arrays.fill(entries, null);
-        holder.size = 0;
+        if (isBaseMap()) {
+            Arrays.fill(entries, null);
+            holder.size = 0;
+        } else {
+            int deleted = 0;
+            int maxLength = Math.min(endIndex, entries.length);
+            for (int i = startIndex; i < maxLength; ++i) {
+                if (entries[i] != null) {
+                    entries[i] = null;
+                    ++deleted;
+                }
+            }
+            holder.size -= deleted;
+        }
         ++holder.modCount;
     }
 
