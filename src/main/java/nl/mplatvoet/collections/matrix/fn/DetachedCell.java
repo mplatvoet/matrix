@@ -1,5 +1,6 @@
 package nl.mplatvoet.collections.matrix.fn;
 
+
 import nl.mplatvoet.collections.matrix.MutableCell;
 
 public final class DetachedCell<T> implements MutableCell<T> {

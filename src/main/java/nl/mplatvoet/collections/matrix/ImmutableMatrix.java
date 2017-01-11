@@ -1,14 +1,16 @@
 package nl.mplatvoet.collections.matrix;
 
-import nl.mplatvoet.collections.matrix.args.Arguments;
+
 import nl.mplatvoet.collections.matrix.fn.CellMapFunction;
 import nl.mplatvoet.collections.matrix.fn.DetachedCell;
 import nl.mplatvoet.collections.matrix.fn.Functions;
-import nl.mplatvoet.collections.matrix.range.Range;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.function.Function;
+
+import static nl.mplatvoet.collections.matrix.args.Arguments.checkArgument;
+
 
 public class ImmutableMatrix<T> implements Matrix<T> {
     private final AbstractMatrixCell[][] cells;
@@ -19,7 +21,7 @@ public class ImmutableMatrix<T> implements Matrix<T> {
     private final Iterable<Column<T>> columnsIterable;
 
     private ImmutableMatrix(T[][] source) {
-        Arguments.checkArgument(source == null, "source cannot be null");
+        checkArgument(source == null, "source cannot be null");
 
         int rowSize = source.length;
         int columnSize = maxColumn(source);
@@ -30,10 +32,10 @@ public class ImmutableMatrix<T> implements Matrix<T> {
             T[] values = source[r];
             int c = 0;
             for (; c < values.length; c++) {
-                cells[r][c] = new ValueMatrixCell<>(this, values[c], r,c);
+                cells[r][c] = new ValueMatrixCell<>(this, values[c], r, c);
             }
             for (; c < columnSize; c++) {
-                cells[r][c] = new BlankMatrixCell<>(this, r,c);
+                cells[r][c] = new BlankMatrixCell<>(this, r, c);
             }
         }
 
@@ -46,19 +48,11 @@ public class ImmutableMatrix<T> implements Matrix<T> {
         columnsIterable = new ArrayIterable<>(columns);
     }
 
-    private int maxColumn(T[][] source) {
-        int max = 0;
-        for (T[] ts : source) {
-            max = Math.max(max, ts.length);
-        }
-        return max;
-    }
-
     private <S> ImmutableMatrix(Matrix<S> matrix, Range range, CellMapFunction<S, T> map) {
-        Arguments.checkArgument(matrix == null, "matrix cannot be null");
-        Arguments.checkArgument(range == null, "range cannot be null");
-        Arguments.checkArgument(map == null, "map cannot be null");
-        Arguments.checkArgument(!range.fits(matrix), "%s does not fit in provided %s", range, matrix);
+        checkArgument(matrix == null, "matrix cannot be null");
+        checkArgument(range == null, "range cannot be null");
+        checkArgument(map == null, "map cannot be null");
+        checkArgument(!range.fits(matrix), "%s does not fit in provided %s", range, matrix);
 
         int rowSize = range.getRowSize();
         int columnSize = range.getColumnSize();
@@ -77,9 +71,9 @@ public class ImmutableMatrix<T> implements Matrix<T> {
     }
 
     private ImmutableMatrix(int rows, int columns, Function<MutableCell<T>, T> fill) {
-        Arguments.checkArgument(rows < 0, "row must be >= 0 but was %s", rows);
-        Arguments.checkArgument(columns < 0, "row must be >= 0 but was %s", columns);
-        Arguments.checkArgument(fill == null, "cells function cannot be null");
+        checkArgument(rows < 0, "row must be >= 0 but was %s", rows);
+        checkArgument(columns < 0, "row must be >= 0 but was %s", columns);
+        checkArgument(fill == null, "cells function cannot be null");
 
 
         cells = new AbstractMatrixCell[rows][columns];
@@ -127,6 +121,14 @@ public class ImmutableMatrix<T> implements Matrix<T> {
         //TODO check if range is empty and return a special empty matrix
 
         return new <T>ImmutableMatrix<R>(matrix, range, map);
+    }
+
+    private int maxColumn(T[][] source) {
+        int max = 0;
+        for (T[] ts : source) {
+            max = Math.max(max, ts.length);
+        }
+        return max;
     }
 
     private <S> void fillCells(Matrix<S> source, Range range, CellMapFunction<S, T> map) {

@@ -1,11 +1,12 @@
 package nl.mplatvoet.collections.map;
 
-import com.google.common.collect.testing.*;
+import com.google.common.collect.testing.SampleElements;
+import com.google.common.collect.testing.SortedMapTestSuiteBuilder;
+import com.google.common.collect.testing.TestSortedMapGenerator;
 import com.google.common.collect.testing.features.CollectionFeature;
 import com.google.common.collect.testing.features.CollectionSize;
 import com.google.common.collect.testing.features.MapFeature;
 import junit.framework.TestSuite;
-import org.hamcrest.core.Is;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
@@ -13,7 +14,6 @@ import org.junit.runners.Suite;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
-import java.util.TreeMap;
 
 import static com.google.common.collect.testing.Helpers.mapEntry;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -21,46 +21,49 @@ import static org.hamcrest.core.Is.is;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-        ArrayMapTest.GuavaTests.class,
-        ArrayMapTest.AdditionalTests.class,
+        CompactArrayMapTest.GuavaTests.class,
+        CompactArrayMapTest.AdditionalTests.class,
 })
-public class ArrayMapTest {
+public class CompactArrayMapTest {
 
     public static class AdditionalTests {
-        private ArrayMap<String> map = new ArrayMap<>();
+
+        private <V> SortedMap<Integer, V> createNewSortedMap() {
+            return new CompactArrayMap<>();
+        }
 
         @Test(expected = IllegalArgumentException.class)
         public void put_negativeKeyShouldThrow() throws Exception {
-            map.put(-1, "");
+            createNewSortedMap().put(-1, "");
         }
 
         @Test
         public void clear_tailMap() {
-            final SortedMap<Integer, Integer> map = new ArrayMap<>();
-            map.put(1,5);
-            map.put(2,5);
-            map.put(3,5);
+            final SortedMap<Integer, Integer> map = createNewSortedMap();
+            map.put(1, 5);
+            map.put(2, 5);
+            map.put(4, 5);
             map.tailMap(2).clear();
             assertThat("should only clear the tailMap portion", map.size(), is(1));
         }
 
         @Test
         public void clear_headMap() {
-            final SortedMap<Integer, Integer> map = new ArrayMap<>();
-            map.put(1,5);
-            map.put(2,5);
-            map.put(3,5);
+            final SortedMap<Integer, Integer> map = createNewSortedMap();
+            map.put(1, 5);
+            map.put(2, 5);
+            map.put(4, 5);
             map.headMap(2).clear();
             assertThat("should only clear the headMap portion", map.size(), is(2));
         }
 
         @Test
         public void clear_subMap() {
-            final SortedMap<Integer, Integer> map = new ArrayMap<>();
-            map.put(1,5);
-            map.put(2,5);
-            map.put(3,5);
-            map.subMap(2,3).clear();
+            final SortedMap<Integer, Integer> map = createNewSortedMap();
+            map.put(1, 5);
+            map.put(2, 5);
+            map.put(4, 5);
+            map.subMap(2, 3).clear();
             assertThat("should only clear the subMap portion", map.size(), is(2));
         }
     }
@@ -69,7 +72,7 @@ public class ArrayMapTest {
         public static TestSuite suite() {
             return SortedMapTestSuiteBuilder
                     .using(new DefaultTestMapGenerator())
-                    .named("ArrayMapGuavaTest")
+                    .named("CompactArrayMapGuavaTest")
                     .withFeatures(
                             CollectionSize.ANY,
                             MapFeature.SUPPORTS_REMOVE,
@@ -81,7 +84,6 @@ public class ArrayMapTest {
                             MapFeature.FAILS_FAST_ON_CONCURRENT_MODIFICATION,
                             CollectionFeature.SUPPORTS_ITERATOR_REMOVE,
                             CollectionFeature.SERIALIZABLE
-                            //CollectionFeature.SERIALIZABLE_INCLUDING_VIEWS
                     ).createTestSuite();
         }
     }
@@ -99,10 +101,14 @@ public class ArrayMapTest {
 
         @Override
         public SortedMap<Integer, Integer> create(Object... elements) {
-            ArrayMap<Integer> map = new ArrayMap<>();
+            CompactArrayMap<Integer> map = new CompactArrayMap<>();
             for (Object e : elements) {
                 Map.Entry<?, ?> entry = (Map.Entry<?, ?>) e;
-                map.put((Integer) entry.getKey(), (Integer) entry.getValue());
+                if (entry == null) {
+                    map.put(null, null);
+                } else {
+                    map.put((Integer) entry.getKey(), (Integer) entry.getValue());
+                }
             }
             return map;
         }

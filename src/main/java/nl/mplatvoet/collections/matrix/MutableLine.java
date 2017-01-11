@@ -1,5 +1,6 @@
 package nl.mplatvoet.collections.matrix;
 
+
 import nl.mplatvoet.collections.matrix.fn.CellMapFunction;
 
 public interface MutableLine<T> extends Line<T> {

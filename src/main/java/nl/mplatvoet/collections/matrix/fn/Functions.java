@@ -1,11 +1,13 @@
 package nl.mplatvoet.collections.matrix.fn;
 
+
 import nl.mplatvoet.collections.matrix.MatrixCell;
 import nl.mplatvoet.collections.matrix.MutableCell;
 
 import java.util.function.Function;
 
 import static nl.mplatvoet.collections.matrix.args.Arguments.checkArgument;
+
 
 public class Functions {
 

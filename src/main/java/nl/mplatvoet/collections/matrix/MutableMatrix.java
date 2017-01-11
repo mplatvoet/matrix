@@ -5,6 +5,15 @@ import nl.mplatvoet.collections.matrix.fn.CellMapFunction;
 
 public interface MutableMatrix<T> extends Matrix<T> {
 
+    default void consolidate() {
+        consolidateRows();
+        consolidateColumns();
+    }
+
+    void consolidateRows();
+
+    void consolidateColumns();
+
     MutableMatrixCell<T> getCell(int row, int column);
 
     T get(int row, int column);

@@ -6,6 +6,4 @@ public interface MutableMatrixCell<T> extends MatrixCell<T>, MutableCell<T> {
     MutableRow<T> getRow();
 
     MutableColumn<T> getColumn();
-
-
 }

@@ -1,7 +1,7 @@
 package nl.mplatvoet.collections.matrix;
 
+
 import nl.mplatvoet.collections.matrix.fn.CellMapFunction;
-import nl.mplatvoet.collections.matrix.range.Range;
 
 import java.util.Comparator;
 import java.util.Iterator;
@@ -50,6 +50,7 @@ public final class Matrices {
         }
         return matrix;
     }
+
 
     public static <T> Matrix<T> copyOf(T[][] source) {
         return ImmutableMatrix.copyOf(source);

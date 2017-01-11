@@ -1,8 +1,8 @@
-package nl.mplatvoet.collections.matrix.range;
+package nl.mplatvoet.collections.matrix;
 
 
-import nl.mplatvoet.collections.matrix.Matrix;
-import nl.mplatvoet.collections.matrix.args.Arguments;
+import static nl.mplatvoet.collections.matrix.args.Arguments.checkArgument;
+import static nl.mplatvoet.collections.matrix.args.Arguments.checkIndex;
 
 public class Range {
     private final int rowBeginIndex;
@@ -11,10 +11,10 @@ public class Range {
     private final int columnEndIndex;
 
     private Range(int rowBeginIndex, int rowEndIndex, int columnBeginIndex, int columnEndIndex) {
-        Arguments.checkIndex(rowBeginIndex < 0, "rowBeginIndex must be >= 0");
-        Arguments.checkIndex(columnBeginIndex < 0, "columnBeginIndex must be >= 0");
-        Arguments.checkIndex(rowEndIndex < rowBeginIndex, "rowEndIndex[%s] must be >= to rowBeginIndex[%s] ", rowEndIndex, rowBeginIndex);
-        Arguments.checkIndex(columnEndIndex < columnBeginIndex, "columnEndIndex[%s] must be >= to columnBeginIndex[%s] ", columnEndIndex, columnBeginIndex);
+        checkIndex(rowBeginIndex < 0, "rowBeginIndex must be >= 0");
+        checkIndex(columnBeginIndex < 0, "columnBeginIndex must be >= 0");
+        checkIndex(rowEndIndex < rowBeginIndex, "rowEndIndex[%s] must be >= to rowBeginIndex[%s] ", rowEndIndex, rowBeginIndex);
+        checkIndex(columnEndIndex < columnBeginIndex, "columnEndIndex[%s] must be >= to columnBeginIndex[%s] ", columnEndIndex, columnBeginIndex);
 
         this.rowBeginIndex = rowBeginIndex;
         this.rowEndIndex = rowEndIndex;
@@ -27,7 +27,7 @@ public class Range {
     }
 
     public static Range of(Matrix<?> matrix) {
-        Arguments.checkArgument(matrix == null, "matrix cannot be null");
+        checkArgument(matrix == null, "matrix cannot be null");
         return new Range(0, matrix.getRowSize(), 0, matrix.getColumnSize());
     }
 
@@ -56,7 +56,7 @@ public class Range {
     }
 
     public boolean matches(Matrix<?> matrix) {
-        Arguments.checkArgument(matrix == null, "matrix cannot be null");
+        checkArgument(matrix == null, "matrix cannot be null");
 
         return rowBeginIndex == 0
                 && columnBeginIndex == 0
@@ -65,13 +65,13 @@ public class Range {
     }
 
     public boolean fits(Matrix<?> matrix) {
-        Arguments.checkArgument(matrix == null, "matrix cannot be null");
+        checkArgument(matrix == null, "matrix cannot be null");
         return rowBeginIndex <= matrix.getRowSize() && rowEndIndex <= matrix.getRowSize()
                 && columnBeginIndex <= matrix.getColumnSize() && columnEndIndex <= matrix.getColumnSize();
     }
 
     public boolean fits(Range range) {
-        Arguments.checkArgument(range == null, "range cannot be null");
+        checkArgument(range == null, "range cannot be null");
         return rowBeginIndex <= range.getRowSize() && rowEndIndex <= range.getRowSize()
                 && columnBeginIndex <= range.getColumnSize() && columnEndIndex <= range.getColumnSize();
     }
